@@ -204,29 +204,23 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         alert("¡Enlace de invitación copiado!");
     };
 
-    const shareInvitation = async (guest: Guest) => {
+    const shareInvitation = (guest: Guest) => {
         const link = `${getBaseUrl()}/invitacion/${eventId}/${guest.id}`;
+        const message = `*¡Hola ${guest.name}!* 👋\n\nTe invitamos cordialmente a nuestro evento:\n*${event?.name.toUpperCase()}* 🥂\n\nPresiona el siguiente enlace para ver detalles y confirmar:\n\n${link}\n\n¡Esperamos verte ahí! ✨`;
 
-        // Mensaje optimizado para WhatsApp (con asteriscos para negritas y saltos de línea)
-        const message = `*¡Hola ${guest.name}!* 👋\n\nTe invitamos cordialmente a nuestro evento:\n*${event?.name.toUpperCase()}* 🥂\n\nPresiona el siguiente enlace para ver el itinerario, la ubicación y confirmar tu asistencia:\n\n${link}\n\n¡Esperamos verte ahí! ✨`;
+        // 1. WhatsApp Web forzado (usa web.whatsapp.com en lugar de api o wa.me)
+        const whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank', 'noreferrer');
 
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: `Invitación: ${event?.name}`,
-                    text: message,
-                });
-            } catch (err) {
-                console.log('Error sharing:', err);
-            }
-        } else {
-            // Detect mobile vs desktop for proper WhatsApp URL
-            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const whatsappUrl = isMobile
-                ? `https://wa.me/?text=${encodeURIComponent(message)}`
-                : `https://web.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank');
-        }
+        // 2. Copia al portapapeles como respaldo silencioso
+        const textArea = document.createElement("textarea");
+        textArea.value = message;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+        } catch (e) { }
+        document.body.removeChild(textArea);
     };
 
     if (loading) {

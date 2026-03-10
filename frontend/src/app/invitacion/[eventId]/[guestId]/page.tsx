@@ -85,12 +85,14 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
             (guestSnap) => {
                 if (guestSnap.exists()) {
                     const guestData = { id: guestSnap.id, ...guestSnap.data() } as Guest;
+                    console.log("INVITACION_DEBUG: Guest loaded", guestData);
                     setGuest(guestData);
                     setSelectedPasses(guestData.passes);
                     if (guestData.status !== "Pendiente") {
                         setRsvpDone(true);
                     }
                 } else {
+                    console.log("INVITACION_DEBUG: No Guest found");
                     console.log("El invitado no existe en Firebase.");
                 }
                 setGuestLoading(false);
