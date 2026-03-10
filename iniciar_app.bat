@@ -1,44 +1,56 @@
 @echo off
 setlocal
+title Iniciar EventosApp - Servidor Local
 
 echo ==========================================
-echo    Iniciando App de Eventos (EventosApp)
+echo    Iniciando Servidor Local (EventosApp)
 echo ==========================================
 echo.
 
-REM 1. Verificar Node.js
-where node >nul 2>nul
-if %errorlevel% neq 0 (
-    echo [ERROR CRITICO] Node.js NO ESTA INSTALADO.
-    echo Por favor instala Node.js primero: https://nodejs.org
+REM 1. Verificar si estamos en la raíz o en frontend
+if exist "frontend" (
+    cd frontend
+) else if not exist "package.json" (
+    echo [ERROR] No se encuentra la carpeta 'frontend' ni 'package.json'.
+    echo Por favor, ejecuta este archivo desde la carpeta raiz del proyecto.
     pause
     exit /b 1
 )
 
-REM 2. Ir a la carpeta frontend
-cd frontend
-if %errorlevel% neq 0 (
-    echo [ERROR] No se encuentra la carpeta 'frontend'.
-    echo Asegurate de estar en la carpeta raiz del proyecto.
-    pause
-    exit /b 1
-)
-
-REM 3. Verificar e instalar dependencias si faltan
+REM 2. Verificar dependencias
 if not exist "node_modules" (
-    echo [INFO] Primera ejecucion detectada. 
-    echo Instalando dependencias necesarias...
+    echo [INFO] No se detectaron dependencias. Instalando...
     call npm install
 )
 
+REM 3. Verificar Archivo de Entorno
+if not exist ".env.local" (
+    echo [ALERTA] No se encontro el archivo .env.local.
+    if exist ".env.example" (
+        echo [INFO] Creando .env.local basandose en .env.example...
+        copy .env.example .env.local
+        echo [IMPORTANTE] Por favor, edita .env.local con tus credenciales de Firebase.
+    ) else (
+        echo [ERROR] No se encontro ni .env.local ni .env.example.
+    )
+    pause
+)
+
 echo.
-echo [INFO] Iniciando servidor de desarrollo...
-echo La aplicacion abrira automaticamente en tu navegador.
-echo Presiona Ctrl+C para detener el servidor.
+echo [INFO] Optimizando compilacion...
+echo [INFO] El servidor estara disponible en: http://localhost:3000
 echo.
 
-REM Esperar 5 segundos y abrir el navegador (mientras carga el server)
-start /min cmd /c "timeout /t 5 >nul & start http://localhost:3000"
+REM Ejecutar servidor en segundo plano y abrir navegador
+start /min cmd /c "timeout /t 8 >nul & start http://localhost:3000/dashboard"
+
+echo [OK] Servidor iniciado correctamente.
+echo.
+echo TIP: Si no ves la camara en una invitacion, asegurate de:
+echo 1. Estar usando un link valido del Dashboard local.
+echo 2. Haber "Confirmado" la asistencia en esa invitacion.
+echo 3. Tu navegador debe permitir el acceso a la camara en localhost.
+echo.
 
 call npm run dev
 pause

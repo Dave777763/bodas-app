@@ -141,6 +141,66 @@ export const themes: Theme[] = [
         },
         style: 'minimalist',
     },
+    {
+        id: 'corporate-midnight',
+        name: 'Corporativo Midnight',
+        description: 'Profesional y elegante para eventos de negocios',
+        colors: {
+            primary: '#0f172a',
+            primaryLight: '#e2e8f0',
+            primaryDark: '#020617',
+            accent: '#3b82f6',
+            background: '#ffffff',
+            text: '#1e293b',
+            textLight: '#64748b',
+        },
+        fonts: {
+            heading: 'Inter',
+            body: 'Inter',
+            accent: 'Inter',
+        },
+        style: 'minimalist',
+    },
+    {
+        id: 'neon-party',
+        name: 'Neon Party',
+        description: 'Vibrante y eléctrico para celebraciones nocturnas',
+        colors: {
+            primary: '#a855f7',
+            primaryLight: '#f3e8ff',
+            primaryDark: '#6b21a8',
+            accent: '#22c55e',
+            background: '#0f172a',
+            text: '#f8fafc',
+            textLight: '#94a3b8',
+        },
+        fonts: {
+            heading: 'Outfit',
+            body: 'Inter',
+            accent: 'Outfit',
+        },
+        style: 'modern',
+    },
+    {
+        id: 'kids-celebration',
+        name: 'Kids Celebration',
+        description: 'Divertido y colorido para cumpleaños infantiles',
+        colors: {
+            primary: '#0ea5e9',
+            primaryLight: '#e0f2fe',
+            primaryDark: '#0369a1',
+            accent: '#f43f5e',
+            background: '#fffef9',
+            text: '#0f172a',
+            textLight: '#475569',
+        },
+        fonts: {
+            heading: 'Nunito',
+            body: 'Inter',
+            accent: 'Pacifico',
+        },
+        style: 'modern',
+    },
 ];
 
 export const getTheme = (themeId: string): Theme => {

@@ -1,76 +1,65 @@
-REM @echo off
+@echo off
 setlocal
+title Configurar Proyecto - EventosApp
 
 echo ==========================================
-echo    Configuracion de App de Eventos
+echo    Configuracion de App de Eventos (EventosApp)
 echo ==========================================
+echo.
 
 REM 1. Verificar Node.js
-echo.
 echo [1/3] Verificando Node.js...
-node -v 
-echo ErrorLevel check: %errorlevel%
+node -v >nul 2>&1
 if %errorlevel% neq 0 (
-    echo.
     echo [ERROR CRITICO] Node.js NO ESTA INSTALADO.
     echo.
-    echo Esta aplicacion requiere Node.js para funcionar.
-    echo Se abrira la pagina de descarga automaticamente...
-    echo.
-    timeout /t 3
-    start https://nodejs.org/es/download/
-    echo.
-    echo INSTRUCCIONES:
-    echo 1. Instala Node.js ^(Version LTS recomendada^)
-    echo 2. Reinicia tu computadora ^(o cierra todas las ventanas de comandos^)
-    echo 3. Vuelve a ejecutar este archivo.
-    echo.
-    echo Presiona cualquier tecla para salir...
-    pause >nul
-    exit /b 1
-)
-
-echo Node.js detectado correctamente!
-
-REM 2. Crear proyecto Next.js si no existe
-echo.
-echo [2/3] Inicializando proyecto Next.js en /frontend...
-if exist "frontend" (
-    echo La carpeta 'frontend' ya existe. Saltando creacion de proyecto.
-) else (
-    echo Creando nueva app Next.js... 
-    echo Esto puede tardar unos minutos, por favor espera...
-    echo.
-    call npx -y create-next-app@latest frontend --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --use-npm --no-git
-    if %errorlevel% neq 0 (
-        echo [ERROR] Hubo un problema al crear la app. Revisa los mensajes anteriores.
-        pause
-        exit /b 1
-    )
-    echo Proyecto base creado exitosamente.
-)
-
-REM 3. Instalar dependencias adicionales
-echo.
-echo [3/3] Instalando librerias adicionales...
-cd frontend
-if %errorlevel% neq 0 (
-    echo [ERROR] No se pudo entrar a la carpeta frontend.
+    echo Por favor instala Node.js primero: https://nodejs.org
     pause
     exit /b 1
 )
+echo Node.js detectado exitosamente.
+echo.
 
-echo Instalando Firebase y otras utilidades...
-call npm install firebase lucide-react clsx tailwind-merge
+REM 2. Entrar a la carpeta frontend
+if not exist "frontend" (
+    echo [ALERTA] No se encuentra la carpeta 'frontend'. 
+    echo Asegurate de estar en la carpeta raiz del proyecto.
+    pause
+    exit /b 1
+)
+cd frontend
+
+REM 3. Instalar dependencias necesarias
+echo [2/3] Instalando dependencias necesarias (esto puede tardar unos minutos)...
+echo.
+call npm install
+if %errorlevel% neq 0 (
+    echo [ERROR] No se pudieron instalar las dependencias con npm install.
+    echo Intentando con npm install --legacy-peer-deps...
+    call npm install --legacy-peer-deps
+)
+
+REM 4. Verificar Archivo de Entorno
+echo.
+echo [3/3] Verificando archivo de entorno...
+if not exist ".env.local" (
+    if exist ".env.example" (
+        echo [INFO] Generando el archivo .env.local basandose en .env.example...
+        copy .env.example .env.local
+        echo [OK] Archivo .env.local creado. No olvides editarlo con tus credenciales.
+    ) else (
+        echo [ALERTA] No se encontro ni .env.local ni .env.example.
+    )
+) else (
+    echo [OK] El archivo .env.local ya existe.
+)
 
 echo.
 echo ==========================================
 echo    Configuracion Completada Exitosamente!
 echo ==========================================
 echo.
-echo Para iniciar el servidor de desarrollo:
-echo 1. Abre una terminal en esta carpeta
-echo 2. Escribe: cd frontend
-echo 3. Escribe: npm run dev
+echo Ahora puedes iniciar la aplicacion ejecutando:
+echo > iniciar_app.bat
 echo.
 pause

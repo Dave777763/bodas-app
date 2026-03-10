@@ -35,6 +35,7 @@ export default function DashboardPage() {
         location: "",
         mapUrl: ""
     });
+    const [searchTerm, setSearchTerm] = useState("");
 
     // Escuchar invitados de TODOS los eventos del usuario (collectionGroup)
     useEffect(() => {
@@ -145,110 +146,143 @@ export default function DashboardPage() {
     };
 
     return (
-        <div className="p-8 min-h-screen bg-vento-bg text-vento-text">
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-4xl font-black font-serif tracking-tight">Vento <span className="text-vento-primary">Dashboard</span></h1>
+        <div className="p-8 min-h-screen bg-vento-bg text-vento-text transition-colors duration-500">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+                <div>
+                    <h1 className="text-4xl font-black font-serif tracking-tight mb-2">Vento <span className="text-vento-primary">Dashboard</span></h1>
+                    <p className="text-vento-text-muted text-sm font-medium">Gestiona todos tus grandes momentos desde un solo lugar.</p>
+                </div>
 
-                <div className="flex items-center gap-2 bg-vento-card p-1 rounded-2xl border border-vento-border shadow-sm">
+                <div className="flex items-center gap-2 bg-vento-card p-1.5 rounded-2xl border border-vento-border shadow-lg">
                     <button
                         onClick={() => setTheme("light")}
-                        className={`p-2 rounded-xl transition ${theme === "light" ? "bg-vento-primary text-white shadow-md" : "text-vento-text-muted hover:bg-vento-bg"}`}
+                        className={`p-2.5 rounded-xl transition-all duration-300 ${theme === "light" ? "bg-vento-primary text-white shadow-xl shadow-vento-primary/30" : "text-vento-text-muted hover:bg-vento-bg"}`}
+                        title="Tema Claro"
                     >
-                        <Sun size={18} />
+                        <Sun size={20} />
                     </button>
                     <button
                         onClick={() => setTheme("dark")}
-                        className={`p-2 rounded-xl transition ${theme === "dark" ? "bg-vento-primary text-white shadow-md" : "text-vento-text-muted hover:bg-vento-bg"}`}
+                        className={`p-2.5 rounded-xl transition-all duration-300 ${theme === "dark" ? "bg-vento-primary text-white shadow-xl shadow-vento-primary/30" : "text-vento-text-muted hover:bg-vento-bg"}`}
+                        title="Tema Oscuro"
                     >
-                        <Moon size={18} />
+                        <Moon size={20} />
                     </button>
                     <button
                         onClick={() => setTheme("matrix")}
-                        className={`p-2 rounded-xl transition ${theme === "matrix" ? "bg-vento-primary text-white shadow-md" : "text-vento-text-muted hover:bg-vento-bg"}`}
+                        className={`p-2.5 rounded-xl transition-all duration-300 ${theme === "matrix" ? "bg-vento-primary text-white shadow-xl shadow-vento-primary/30" : "text-vento-text-muted hover:bg-vento-bg"}`}
+                        title="Tema Matrix"
                     >
-                        <Terminal size={18} />
+                        <Terminal size={20} />
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                 {/* Stats Cards */}
-                <div className="bg-vento-card p-7 rounded-3xl shadow-sm border border-vento-border group hover:border-vento-primary transition-all duration-300">
-                    <h3 className="text-vento-text-muted text-xs font-bold uppercase tracking-widest mb-2">Confirmados</h3>
-                    <p className="text-5xl font-black text-vento-primary tabular-nums">{globalStats.confirmados}</p>
+                <div className="bg-vento-card p-8 rounded-[2rem] shadow-sm border border-vento-border group hover:border-vento-primary/50 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 delay-75 fill-mode-both">
+                    <h3 className="text-vento-text-muted text-[10px] font-black uppercase tracking-[0.2em] mb-3">Invitados Confirmados</h3>
+                    <p className="text-5xl font-black text-vento-primary tabular-nums tracking-tighter">{globalStats.confirmados}</p>
                 </div>
 
-                <div className="bg-vento-card p-7 rounded-3xl shadow-sm border border-vento-border group hover:border-vento-primary transition-all duration-300">
-                    <h3 className="text-vento-text-muted text-xs font-bold uppercase tracking-widest mb-2">Pendientes</h3>
-                    <p className="text-5xl font-black text-amber-500 tabular-nums">{globalStats.pendientes}</p>
+                <div className="bg-vento-card p-8 rounded-[2rem] shadow-sm border border-vento-border group hover:border-vento-primary/50 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 delay-150 fill-mode-both">
+                    <h3 className="text-vento-text-muted text-[10px] font-black uppercase tracking-[0.2em] mb-3">Respuestas Pendientes</h3>
+                    <p className="text-5xl font-black text-amber-500 tabular-nums tracking-tighter">{globalStats.pendientes}</p>
                 </div>
 
-                <div className="bg-vento-card p-7 rounded-3xl shadow-sm border border-vento-border group hover:border-vento-primary transition-all duration-300">
-                    <h3 className="text-vento-text-muted text-xs font-bold uppercase tracking-widest mb-2">Total Eventos</h3>
-                    <p className="text-5xl font-black text-blue-500 tabular-nums">{events.length}</p>
+                <div className="bg-vento-card p-8 rounded-[2rem] shadow-sm border border-vento-border group hover:border-vento-primary/50 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 delay-300 fill-mode-both">
+                    <h3 className="text-vento-text-muted text-[10px] font-black uppercase tracking-[0.2em] mb-3">Sesiones Activas</h3>
+                    <p className="text-5xl font-black text-blue-500 tabular-nums tracking-tighter">{events.length}</p>
                 </div>
             </div>
 
             <div>
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold font-serif">Mis Sesiones Vento</h2>
-                    {events.length > 0 && (
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="px-6 py-2.5 bg-vento-primary text-white rounded-2xl hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-vento-primary/20 font-bold"
-                        >
-                            <Plus size={20} /> Nuevo Evento
-                        </button>
-                    )}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+                    <div className="flex items-center gap-4">
+                        <h2 className="text-2xl font-black font-serif italic">Mis Sesiones Vento</h2>
+                        <span className="px-3 py-1 bg-vento-primary/10 text-vento-primary rounded-full text-[10px] font-black uppercase tracking-widest border border-vento-primary/20">{events.length}</span>
+                    </div>
+
+                    <div className="flex gap-4 w-full md:w-auto">
+                        <div className="relative flex-1 md:w-72 group">
+                            <Plus className="absolute left-4 top-1/2 -translate-y-1/2 text-vento-text-muted rotate-45 transition-colors group-focus-within:text-vento-primary" size={20} />
+                            <input
+                                type="text"
+                                placeholder="Filtrar eventos..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-12 pr-6 py-3 bg-vento-card border border-vento-border rounded-2xl focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium text-sm shadow-sm"
+                            />
+                        </div>
+                        {events.length > 0 && (
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                className="px-8 py-3 bg-vento-primary text-white rounded-2xl hover:opacity-90 transition-all flex items-center gap-3 shadow-xl shadow-vento-primary/20 font-black text-sm uppercase tracking-widest"
+                            >
+                                <Plus size={20} /> Nuevo
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {fetching ? (
                     <div className="flex justify-center p-20">
                         <Loader2 className="animate-spin text-vento-primary" size={40} />
                     </div>
-                ) : events.length === 0 ? (
-                    <div className="bg-vento-card p-16 rounded-3xl border border-dashed border-vento-border text-center">
-                        <p className="text-vento-text-muted mb-6 text-xl">Bienvenido a Vento. Comienza creando tu primer gran momento.</p>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="px-8 py-3 bg-vento-primary text-white rounded-2xl hover:opacity-90 transition font-bold shadow-xl shadow-vento-primary/20"
-                        >
-                            Crear mi primer evento
-                        </button>
+                ) : events.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
+                    <div className="bg-vento-card p-20 rounded-[2.5rem] border border-dashed border-vento-border text-center shadow-xl">
+                        <p className="text-vento-text-muted mb-6 text-lg font-medium italic">No se encontraron eventos que coincidan con tu búsqueda.</p>
+                        <button onClick={() => setSearchTerm("")} className="text-vento-primary font-black uppercase text-xs tracking-widest hover:underline">Limpiar Filtros</button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {events.map((event) => (
-                            <div
-                                key={event.id}
-                                onClick={() => router.push(`/dashboard/${event.id}`)}
-                                className="bg-vento-card p-6 rounded-3xl border border-vento-border shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group cursor-pointer"
-                            >
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="p-3 bg-vento-bg rounded-2xl text-vento-primary group-hover:bg-vento-primary group-hover:text-white transition-colors duration-300">
-                                        <PartyPopper size={24} />
-                                    </div>
-                                    <ChevronRight className="text-vento-text-muted group-hover:text-vento-primary transition-colors" />
-                                </div>
-                                <h3 className="text-xl font-bold mb-3">{event.name}</h3>
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2 text-sm text-vento-text-muted">
-                                        <Calendar size={14} className="text-vento-primary" />
-                                        <span>{event.date}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-vento-text-muted">
-                                        <MapPin size={14} className="text-vento-primary" />
-                                        <span>{event.location}</span>
-                                    </div>
-                                    {event.mapUrl && (
-                                        <div className="flex items-center gap-2 text-sm text-emerald-600">
-                                            <LinkIcon size={14} />
-                                            <span>Link de mapa incluido</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
+                        {events
+                            .filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                            .map((event, index) => (
+                                <div
+                                    key={event.id}
+                                    onClick={() => router.push(`/dashboard/${event.id}`)}
+                                    className="bg-vento-card p-8 rounded-[2.5rem] border border-vento-border shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group cursor-pointer relative overflow-hidden"
+                                    style={{ animationDelay: `${index * 100}ms` }}
+                                >
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-vento-primary/10 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className="p-4 bg-vento-bg rounded-[1.25rem] text-vento-primary group-hover:bg-vento-primary group-hover:text-white transition-all duration-500 shadow-sm">
+                                            <PartyPopper size={28} />
                                         </div>
-                                    )}
+                                        <div className="h-10 w-10 flex items-center justify-center rounded-full bg-vento-bg text-vento-text-muted group-hover:bg-vento-primary/10 group-hover:text-vento-primary transition-all">
+                                            <ChevronRight size={20} />
+                                        </div>
+                                    </div>
+
+                                    <h3 className="text-2xl font-black font-serif italic mb-4 group-hover:text-vento-primary transition-colors">{event.name}</h3>
+
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3 text-sm font-bold text-vento-text-muted">
+                                            <div className="p-2 bg-vento-bg rounded-lg border border-vento-border">
+                                                <Calendar size={14} className="text-vento-primary" />
+                                            </div>
+                                            <span>{event.date}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-sm font-bold text-vento-text-muted">
+                                            <div className="p-2 bg-vento-bg rounded-lg border border-vento-border">
+                                                <MapPin size={14} className="text-vento-primary" />
+                                            </div>
+                                            <span className="line-clamp-1">{event.location}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-8 pt-6 border-t border-vento-border flex items-center justify-between">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-vento-text-muted">Ver Detalles</span>
+                                        {event.mapUrl && (
+                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[8px] font-black rounded uppercase tracking-[0.2em] border border-emerald-500/20">
+                                                <LinkIcon size={10} /> Maps
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
                     </div>
                 )}
             </div>

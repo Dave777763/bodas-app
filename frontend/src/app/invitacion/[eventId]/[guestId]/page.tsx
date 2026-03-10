@@ -26,7 +26,7 @@ interface ScheduleItem {
     activity: string;
 }
 
-interface WeddingEvent {
+interface VentoEvent {
     id: string;
     name: string;
     date: string;
@@ -46,7 +46,7 @@ interface Guest {
 
 export default function InvitationPage({ params }: { params: Promise<{ eventId: string; guestId: string }> }) {
     const { eventId, guestId } = use(params);
-    const [event, setEvent] = useState<WeddingEvent | null>(null);
+    const [event, setEvent] = useState<VentoEvent | null>(null);
     const [guest, setGuest] = useState<Guest | null>(null);
     const [eventLoading, setEventLoading] = useState(true);
     const [guestLoading, setGuestLoading] = useState(true);
@@ -66,7 +66,7 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
             doc(db, "events", eventId),
             (eventSnap) => {
                 if (eventSnap.exists()) {
-                    setEvent({ id: eventSnap.id, ...eventSnap.data() } as WeddingEvent);
+                    setEvent({ id: eventSnap.id, ...eventSnap.data() } as VentoEvent);
                 } else {
                     console.log("El evento no existe en Firebase.");
                 }
@@ -223,7 +223,7 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
                             fontFamily: theme.fonts.accent
                         }}
                     >
-                        ¡Nos casamos!
+                        ¡Te invitamos!
                     </p>
                 </div>
 
@@ -364,7 +364,7 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
                                 <div className="space-y-6">
                                     <h3 className="text-center text-xl font-bold text-gray-800 font-serif">Itinerario</h3>
                                     <div className="space-y-0 relative before:absolute before:inset-0 before:ml-2.5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-rose-200 before:to-transparent">
-                                        {event.schedule.sort((a, b) => a.time.localeCompare(b.time)).map((item) => (
+                                        {event.schedule.sort((a: ScheduleItem, b: ScheduleItem) => a.time.localeCompare(b.time)).map((item: ScheduleItem) => (
                                             <div key={item.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active mb-8 last:mb-0">
                                                 {/* Icon/Dot */}
                                                 <div className="flex items-center justify-center w-5 h-5 rounded-full border border-white bg-rose-50 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">

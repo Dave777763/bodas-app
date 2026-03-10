@@ -85,6 +85,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     const [loading, setLoading] = useState(true);
     const [guests, setGuests] = useState<Guest[]>([]);
     const [isAddGuestModalOpen, setIsAddGuestModalOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
     // Formulario de invitado
     const [guestForm, setGuestForm] = useState({
@@ -213,6 +214,20 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         }
     };
 
+    const handleDeleteEvent = async () => {
+        if (!confirm("¿ESTAS SEGURO? Esta acción es irreversible y borrará todos los invitados y fotos.")) return;
+
+        try {
+            const eventRef = doc(db, "events", eventId);
+            await updateDoc(eventRef, { deleted: true });
+            alert("Evento eliminado con éxito");
+            router.push("/dashboard");
+        } catch (e) {
+            console.error("Error deleting event", e);
+            alert("No se pudo eliminar el evento");
+        }
+    };
+
     const getBaseUrl = () => {
         // Si tienes una URL de producción configurada, úsala. 
         // Si no, usa el origen actual.
@@ -312,499 +327,365 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                         <Settings size={18} /> Config
                     </button>
                 </div>
-                className={`px-6 py-2 rounded-lg flex items-center gap-2 font-medium transition ${activeTab === "galeria" ? "bg-amber-50 text-amber-600 shadow-sm" : "text-gray-500 hover:bg-gray-50"}`}
-                    >
-                <ImageIcon size={18} /> Galería de Fotos
-            </button>
-            <button
-                onClick={() => setActiveTab("general")}
-                className={`px-6 py-2 rounded-lg flex items-center gap-2 font-medium transition ${activeTab === "general" ? "bg-rose-50 text-rose-600 shadow-sm" : "text-gray-500 hover:bg-gray-50"}`}
-            >
-                <Info size={18} /> Información
-            </button>
-            <button
-                onClick={() => setActiveTab("config")}
-                className={`px-6 py-2 rounded-lg flex items-center gap-2 font-medium transition ${activeTab === "config" ? "bg-rose-50 text-rose-600 shadow-sm" : "text-gray-500 hover:bg-gray-50"}`}
-            >
-                <Settings size={18} /> Ajustes
-            </button>
-        </div>
 
-                {
-        activeTab === "invitados" && (
-            <div className="space-y-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="relative w-full md:max-w-md">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Buscar por nombre o familia..."
-                            className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none transition"
-                        />
-                    </div>
-                    <button
-                        onClick={() => setIsAddGuestModalOpen(true)}
-                        className="w-full md:w-auto px-6 py-2 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition flex items-center justify-center gap-2 shadow-lg shadow-rose-100 font-medium"
-                    >
-                        <Plus size={20} /> Agregar Invitado
-                    </button>
-                </div>
-
-                {/* Guest Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">Total</p>
-                        <p className="text-2xl font-bold text-gray-800">{guests.length}</p>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        <p className="text-xs text-rose-600 uppercase font-bold tracking-wider mb-1">Confirmados</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                            {guests.reduce((acc, g) => acc + (g.status === "Confirmado" ? g.passes : 0), 0)}
-                        </p>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        <p className="text-xs text-amber-600 uppercase font-bold tracking-wider mb-1">Pendientes</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                            {guests.reduce((acc, g) => acc + (g.status === "Pendiente" ? g.passes : 0), 0)}
-                        </p>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">Pases Totales</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                            {guests.reduce((acc, g) => acc + g.passes, 0)}
-                        </p>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm ring-2 ring-emerald-500/10">
-                        <p className="text-xs text-emerald-600 uppercase font-bold tracking-wider mb-1">Asistieron</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                            {guests.filter(g => g.attended).length}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Guests List */}
-                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-gray-50 border-b border-gray-100">
-                                <tr>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Invitado / Familia</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Pases</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Estado</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
-                                {guests.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={4} className="px-6 py-12 text-center text-gray-500 italic">
-                                            No hay invitados registrados aún.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    guests.map((guest) => (
-                                        <tr key={guest.id} className="hover:bg-gray-50/50 transition group">
-                                            <td className="px-6 py-4">
-                                                <p className="font-bold text-gray-800">{guest.name}</p>
-                                                <p className="text-xs text-gray-500">{guest.group}</p>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm font-medium">
-                                                    {guest.passes}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {guest.status === "Confirmado" && (
-                                                    <span className="flex items-center gap-1.5 text-sm text-emerald-600 font-bold">
-                                                        <CheckCircle2 size={16} /> Confirmado
-                                                    </span>
-                                                )}
-                                                {guest.status === "Pendiente" && (
-                                                    <span className="flex items-center gap-1.5 text-sm text-amber-500 font-bold">
-                                                        <Clock size={16} /> Pendiente
-                                                    </span>
-                                                )}
-                                                {guest.status === "Declinado" && (
-                                                    <span className="flex items-center gap-1.5 text-sm text-rose-500 font-bold">
-                                                        <XCircle size={16} /> Declinado
-                                                    </span>
-                                                )}
-                                                {guest.attended && (
-                                                    <span className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200">
-                                                        Dentro del evento
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <button
-                                                        onClick={() => shareInvitation(guest)}
-                                                        className="px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition flex items-center gap-2 text-sm font-bold border border-emerald-100"
-                                                        title="Enviar por WhatsApp"
-                                                    >
-                                                        <Share2 size={16} />
-                                                        <span className="hidden md:inline">Compartir</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => copyInvitationLink(guest.id)}
-                                                        className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition flex items-center gap-1 text-sm font-bold"
-                                                        title="Copiar invitación"
-                                                    >
-                                                        <Copy size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    {
-        activeTab === "disenar" && (
-            <div className="space-y-6">
-                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-                    <div className="p-6 bg-gradient-to-r from-purple-50 via-rose-50 to-amber-50 border-b border-gray-100">
-                        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                            <FileImage size={24} className="text-purple-600" />
-                            Generador de Invitaciones
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                            Crea invitaciones personalizadas para bodas, quinceaños, cumpleaños y más. Incluye el QR de cada invitado.
-                        </p>
-                    </div>
-                    <div className="p-6">
-                        {guests.length > 0 ? (
-                            <InvitationGenerator
-                                eventId={eventId}
-                                eventName={event.name}
-                                eventDate={event.date}
-                                eventLocation={event.location}
-                                guests={guests}
-                            />
-                        ) : (
-                            <div className="text-center py-12">
-                                <Users size={48} className="mx-auto text-gray-300 mb-4" />
-                                <p className="text-gray-500 font-medium">Primero agrega invitados para generar invitaciones.</p>
-                                <button
-                                    onClick={() => { setActiveTab("invitados"); setIsAddGuestModalOpen(true); }}
-                                    className="mt-4 px-6 py-2 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition font-bold shadow-lg shadow-rose-100"
-                                >
-                                    Agregar Invitados
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    {
-        activeTab === "galeria" && (
-            <div className="space-y-6">
-                <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
-                    <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
-                        <ImageIcon size={28} className="text-amber-500" />
-                        Momentos del Evento
-                    </h3>
-                    <PhotoGallery eventId={eventId} />
-                </div>
-            </div>
-        )
-    }
-
-    {
-        activeTab === "general" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-                    <h3 className="text-xl font-bold text-gray-800 border-b pb-4">Detalles del Evento</h3>
-                    <div className="space-y-4">
-                        <div className="flex items-start gap-3">
-                            <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
-                                <Calendar size={20} />
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500 font-medium">Fecha del Evento</p>
-                                <p className="text-lg font-bold text-gray-800">{event.date}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
-                                <MapPin size={20} />
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500 font-medium">Ubicación</p>
-                                <p className="text-lg font-bold text-gray-800">{event.location}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="pt-4">
-                        <button className="w-full py-3 border border-rose-200 text-rose-600 rounded-xl font-medium hover:bg-rose-50 transition">
-                            Actualizar Información
-                        </button>
-                    </div>
-                </div>
-
-                <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-                    <h3 className="text-xl font-bold text-gray-800 border-b pb-4 flex items-center gap-2">
-                        <Clock className="text-rose-600" size={24} /> Cronograma del Evento
-                    </h3>
-
-                    {/* Schedule List */}
-                    <div className="space-y-4">
-                        {event.schedule && event.schedule.length > 0 ? (
-                            event.schedule.sort((a, b) => a.time.localeCompare(b.time)).map((item) => (
-                                <div key={item.id} className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg group transition">
-                                    <div className="bg-rose-100 text-rose-700 font-bold px-3 py-1 rounded-md text-sm min-w-[4rem] text-center">
-                                        {item.time}
-                                    </div>
-                                    <div className="flex-1 font-medium text-gray-700">
-                                        {item.activity}
-                                    </div>
-                                    <button
-                                        onClick={() => handleDeleteScheduleItem(item.id)}
-                                        className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition p-1"
-                                    >
-                                        <XCircle size={18} />
-                                    </button>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-gray-400 italic text-sm text-center py-4">
-                                No hay actividades registradas.
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Add Schedule Form */}
-                    <form onSubmit={handleAddScheduleItem} className="pt-4 border-t border-gray-100">
-                        <p className="text-sm font-bold text-gray-700 mb-3">Agregar Actividad</p>
-                        <div className="flex gap-2">
-                            <input
-                                type="time"
-                                required
-                                value={scheduleForm.time}
-                                onChange={e => setScheduleForm({ ...scheduleForm, time: e.target.value })}
-                                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 outline-none w-32"
-                            />
-                            <input
-                                type="text"
-                                required
-                                placeholder="Ej. Ceremonia, Baile..."
-                                value={scheduleForm.activity}
-                                onChange={e => setScheduleForm({ ...scheduleForm, activity: e.target.value })}
-                                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 outline-none flex-1"
-                            />
-                            <button
-                                type="submit"
-                                disabled={addingSchedule}
-                                className="bg-gray-900 text-white p-2 rounded-lg hover:bg-gray-800 transition disabled:opacity-50"
-                            >
-                                {addingSchedule ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        )
-    }
-
-
-    {
-        activeTab === "config" && (
-            <div className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Selector de Temas */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-                            <div className="p-6 bg-gradient-to-r from-rose-50 to-purple-50 border-b border-gray-100">
-                                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                    <Palette size={24} className="text-rose-600" />
-                                    Temas de Invitación
-                                </h3>
-                                <p className="text-sm text-gray-600 mt-1">Elige el estilo visual que verán tus invitados</p>
-                            </div>
-                            <div className="p-6">
-                                <ThemeSelector eventId={eventId} currentTheme={event.theme || 'romantic-rose'} />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Vista Previa */}
-                    <div className="space-y-6">
-                        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm sticky top-24">
-                            <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                                <h3 className="font-bold text-gray-700">Vista Previa</h3>
-                                <div className="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded uppercase tracking-wider">
-                                    En Vivo
-                                </div>
-                            </div>
-                            <div className="p-6 flex justify-center bg-gray-100">
-                                {/* Mock Invitation Card */}
-                                <div
-                                    className="w-full max-w-[280px] rounded-2xl shadow-xl overflow-hidden bg-white border border-gray-200 transform scale-90 origin-top"
-                                    style={{
-                                        fontFamily: getTheme(event.theme || 'romantic-rose').fonts.body,
-                                        backgroundColor: getTheme(event.theme || 'romantic-rose').colors.background
-                                    }}
-                                >
-                                    <div className="p-6 text-center space-y-4">
-                                        <div
-                                            className="inline-block p-2 rounded-full"
-                                            style={{
-                                                backgroundColor: getTheme(event.theme || 'romantic-rose').colors.primaryLight,
-                                                color: getTheme(event.theme || 'romantic-rose').colors.primary
-                                            }}
-                                        >
-                                            <Heart size={20} fill="currentColor" />
-                                        </div>
-                                        <h4
-                                            className="text-xl font-bold"
-                                            style={{
-                                                fontFamily: getTheme(event.theme || 'romantic-rose').fonts.heading,
-                                                color: getTheme(event.theme || 'romantic-rose').colors.text
-                                            }}
-                                        >
-                                            {event.name}
-                                        </h4>
-                                        <p
-                                            className="italic text-lg"
-                                            style={{
-                                                fontFamily: getTheme(event.theme || 'romantic-rose').fonts.accent,
-                                                color: getTheme(event.theme || 'romantic-rose').colors.accent
-                                            }}
-                                        >
-                                            ¡Nos casamos!
-                                        </p>
-                                        <div
-                                            className="py-2 px-4 rounded-xl text-xs font-bold"
-                                            style={{
-                                                backgroundColor: getTheme(event.theme || 'romantic-rose').colors.primary,
-                                                color: 'white'
-                                            }}
-                                        >
-                                            Confirmar Asistencia
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="p-4 text-center">
-                                <button
-                                    onClick={() => window.open(`/invitacion/${eventId}/preview`, '_blank')}
-                                    className="text-sm text-rose-600 font-bold hover:underline flex items-center justify-center gap-1 mx-auto"
-                                >
-                                    Ver pantalla completa <ExternalLink size={14} />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Configuración Avanzada */}
-                <div className="bg-white rounded-2xl border border-rose-100 overflow-hidden shadow-sm">
-                    <div className="p-6 bg-rose-50 border-b border-rose-100">
-                        <h3 className="text-xl font-bold text-rose-900">Configuración Avanzada</h3>
-                    </div>
-                    <div className="p-6 space-y-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-bold text-gray-800">Eliminar Evento</p>
-                                <p className="text-sm text-gray-500">Esta acción no se puede deshacer y borrará todos los invitados.</p>
-                            </div>
-                            <button className="px-4 py-2 bg-rose-50 text-rose-600 rounded-lg font-bold border border-rose-100 hover:bg-rose-100 transition">
-                                Eliminar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-            </main >
-
-        {/* Modal Agregar Invitado */ }
-    {
-        isAddGuestModalOpen && (
-            <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-                <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                    <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                        <h3 className="text-xl font-bold text-gray-800">Nuevo Invitado</h3>
-                        <button onClick={() => setIsAddGuestModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1">
-                            <XCircle size={24} />
-                        </button>
-                    </div>
-                    <form onSubmit={handleAddGuest} className="p-6 space-y-4">
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Nombre Completo</label>
-                            <input
-                                required
-                                type="text"
-                                value={guestForm.name}
-                                onChange={(e) => setGuestForm({ ...guestForm, name: e.target.value })}
-                                className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-rose-500 outline-none transition"
-                                placeholder="Ej. Juan Pérez"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Grupo / Familia</label>
-                            <input
-                                type="text"
-                                value={guestForm.group}
-                                onChange={(e) => setGuestForm({ ...guestForm, group: e.target.value })}
-                                className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-rose-500 outline-none transition"
-                                placeholder="Ej. Familia Pérez o Amigos Novio"
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Pases</label>
+                {activeTab === "invitados" && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {/* Search and Add */}
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                            <div className="relative w-full md:max-w-md group">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-vento-text-muted transition-colors group-focus-within:text-vento-primary" size={20} />
                                 <input
-                                    type="number"
-                                    min="1"
-                                    value={guestForm.passes}
-                                    onChange={(e) => setGuestForm({ ...guestForm, passes: parseInt(e.target.value) })}
-                                    className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-rose-500 outline-none transition"
+                                    type="text"
+                                    placeholder="Buscar por nombre o familia..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-12 pr-6 py-3.5 bg-vento-card border border-vento-border rounded-2xl focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Estatus</label>
-                                <select
-                                    value={guestForm.status}
-                                    onChange={(e) => setGuestForm({ ...guestForm, status: e.target.value as "Confirmado" | "Pendiente" | "Declinado" })}
-                                    className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-rose-500 outline-none transition bg-white"
-                                >
-                                    <option value="Pendiente">Pendiente</option>
-                                    <option value="Confirmado">Confirmado</option>
-                                    <option value="Declinado">Declinado</option>
-                                </select>
+                            <button
+                                onClick={() => setIsAddGuestModalOpen(true)}
+                                className="w-full md:w-auto px-8 py-3.5 bg-vento-primary text-white rounded-2xl hover:opacity-90 transition-all flex items-center justify-center gap-3 shadow-xl shadow-vento-primary/20 font-bold"
+                            >
+                                <Plus size={20} /> Agregar Invitado
+                            </button>
+                        </div>
+
+                        {/* Guest Stats */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                            <div className="bg-vento-card p-5 rounded-3xl border border-vento-border shadow-sm">
+                                <p className="text-[10px] text-vento-text-muted uppercase font-black tracking-widest mb-1">Confirmados</p>
+                                <p className="text-3xl font-black text-vento-primary tabular-nums">
+                                    {guests.reduce((acc, g) => acc + (g.status === "Confirmado" ? g.passes : 0), 0)}
+                                </p>
+                            </div>
+                            <div className="bg-vento-card p-5 rounded-3xl border border-vento-border shadow-sm">
+                                <p className="text-[10px] text-vento-text-muted uppercase font-black tracking-widest mb-1">Pendientes</p>
+                                <p className="text-3xl font-black text-amber-500 tabular-nums">
+                                    {guests.reduce((acc, g) => acc + (g.status === "Pendiente" ? g.passes : 0), 0)}
+                                </p>
+                            </div>
+                            <div className="bg-vento-card p-5 rounded-3xl border border-vento-border shadow-sm">
+                                <p className="text-[10px] text-vento-text-muted uppercase font-black tracking-widest mb-1">Invitados</p>
+                                <p className="text-3xl font-black text-vento-text tabular-nums">
+                                    {guests.reduce((acc, g) => acc + g.passes, 0)}
+                                </p>
+                            </div>
+                            <div className="bg-vento-card p-5 rounded-3xl border border-vento-border shadow-sm border-emerald-500/20">
+                                <p className="text-[10px] text-emerald-600 uppercase font-black tracking-widest mb-1">Checked-in</p>
+                                <p className="text-3xl font-black text-emerald-500 tabular-nums">
+                                    {guests.filter(g => g.attended).length}
+                                </p>
                             </div>
                         </div>
-                        <div className="pt-4 flex gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setIsAddGuestModalOpen(false)}
-                                className="flex-1 py-3 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                type="submit"
-                                className="flex-1 py-3 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition shadow-lg shadow-rose-100"
-                            >
-                                Guardar
+
+                        {/* Guests Table */}
+                        <div className="bg-vento-card rounded-[2.5rem] border border-vento-border overflow-hidden shadow-xl">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-vento-bg/50 border-b border-vento-border">
+                                        <tr>
+                                            <th className="px-8 py-5 text-[10px] font-black text-vento-text-muted uppercase tracking-widest">Invitado / Familia</th>
+                                            <th className="px-8 py-5 text-[10px] font-black text-vento-text-muted uppercase tracking-widest">Pases</th>
+                                            <th className="px-8 py-5 text-[10px] font-black text-vento-text-muted uppercase tracking-widest">Estado</th>
+                                            <th className="px-8 py-5 text-[10px] font-black text-vento-text-muted uppercase tracking-widest text-right">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-vento-border">
+                                        {guests.filter(g =>
+                                            g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                            (g.group || "").toLowerCase().includes(searchTerm.toLowerCase())
+                                        ).length === 0 ? (
+                                            <tr>
+                                                <td colSpan={4} className="px-8 py-20 text-center text-vento-text-muted italic font-medium">
+                                                    {searchTerm ? "No se encontraron invitados con ese nombre." : "Aún no hay invitados registrados. Comienza agregando uno arriba."}
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            guests
+                                                .filter(g =>
+                                                    g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                    (g.group || "").toLowerCase().includes(searchTerm.toLowerCase())
+                                                )
+                                                .map((guest) => (
+                                                    <tr key={guest.id} className="hover:bg-vento-bg/50 transition-colors group">
+                                                        <td className="px-8 py-5">
+                                                            <p className="font-bold text-vento-text">{guest.name}</p>
+                                                            <p className="text-xs text-vento-text-muted font-medium">{guest.group || 'Sin grupo'}</p>
+                                                        </td>
+                                                        <td className="px-8 py-5">
+                                                            <span className="px-3 py-1 bg-vento-bg border border-vento-border rounded-lg text-sm font-black tabular-nums">
+                                                                {guest.passes}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-8 py-5">
+                                                            <div className="flex flex-col gap-1">
+                                                                {guest.status === "Confirmado" && (
+                                                                    <span className="flex items-center gap-2 text-sm text-emerald-500 font-bold">
+                                                                        <CheckCircle2 size={16} /> Confirmado
+                                                                    </span>
+                                                                )}
+                                                                {guest.status === "Pendiente" && (
+                                                                    <span className="flex items-center gap-2 text-sm text-amber-500 font-bold">
+                                                                        <Clock size={16} /> Pendiente
+                                                                    </span>
+                                                                )}
+                                                                {guest.status === "Declinado" && (
+                                                                    <span className="flex items-center gap-2 text-sm text-vento-primary font-bold">
+                                                                        <XCircle size={16} /> Declinado
+                                                                    </span>
+                                                                )}
+                                                                {guest.attended && (
+                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase border border-emerald-500/20 max-w-fit">
+                                                                        Checked-In
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-8 py-5 text-right">
+                                                            <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <button
+                                                                    onClick={() => shareInvitation(guest)}
+                                                                    className="px-4 py-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white rounded-xl transition-all flex items-center gap-2 text-xs font-black uppercase border border-emerald-500/20"
+                                                                >
+                                                                    <Share2 size={14} /> Compartir
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => copyInvitationLink(guest.id)}
+                                                                    className="p-2.5 text-vento-primary hover:bg-vento-primary/10 rounded-xl transition-colors border border-transparent hover:border-vento-primary/20"
+                                                                >
+                                                                    <Copy size={16} />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+
+                {activeTab === "disenar" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="bg-vento-card rounded-[2.5rem] border border-vento-border overflow-hidden shadow-xl">
+                            <div className="p-10 bg-gradient-to-br from-vento-bg/50 to-vento-primary/5 border-b border-vento-border">
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-2">Vento Invitation Designer</p>
+                                <h3 className="text-3xl font-black font-serif italic mb-2">Crea Invitaciones Únicas</h3>
+                                <p className="text-vento-text-muted font-medium">
+                                    Personaliza la experiencia visual de tus invitados. Cada diseño incluye el acceso QR dinámico de Vento.
+                                </p>
+                            </div>
+                            <div className="p-10">
+                                {guests.length > 0 ? (
+                                    <InvitationGenerator
+                                        eventId={eventId}
+                                        eventName={event.name}
+                                        eventDate={event.date}
+                                        eventLocation={event.location}
+                                        guests={guests}
+                                    />
+                                ) : (
+                                    <div className="text-center py-20 bg-vento-bg/30 rounded-3xl border border-dashed border-vento-border">
+                                        <Plus className="mx-auto text-vento-text-muted mb-6" size={48} />
+                                        <p className="text-vento-text-muted font-bold text-lg mb-6">Primero necesitas agregar invitados para diseñar sus tarjetas.</p>
+                                        <button
+                                            onClick={() => setActiveTab("invitados")}
+                                            className="px-10 py-4 bg-vento-primary text-white rounded-2xl hover:opacity-90 transition-all font-bold shadow-xl shadow-vento-primary/20"
+                                        >
+                                            Ir a Lista de Invitados
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === "galeria" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="bg-vento-card rounded-[2.5rem] p-10 border border-vento-border shadow-xl">
+                            <div className="mb-10">
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-2">Memories Hub</p>
+                                <h3 className="text-3xl font-black font-serif italic">Galería de Momentos</h3>
+                            </div>
+                            <PhotoGallery eventId={eventId} />
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === "config" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-2 space-y-8">
+                                <div className="bg-vento-card rounded-[2.5rem] border border-vento-border overflow-hidden shadow-xl">
+                                    <div className="p-8 border-b border-vento-border bg-vento-bg/50">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-1">Visual Settings</p>
+                                        <h3 className="text-2xl font-black font-serif italic">Temas de la Invitación</h3>
+                                    </div>
+                                    <div className="p-8">
+                                        <ThemeSelector eventId={eventId} currentTheme={event.theme || 'romantic-rose'} />
+                                    </div>
+                                </div>
+
+                                <div className="bg-vento-card rounded-[2.5rem] border border-vento-border overflow-hidden shadow-xl">
+                                    <div className="p-8 border-b border-vento-border bg-vento-bg/50">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-1">Timing & Details</p>
+                                        <h3 className="text-2xl font-black font-serif italic flex items-center gap-3">
+                                            <Clock className="text-vento-primary" size={24} /> Información & Cronograma
+                                        </h3>
+                                    </div>
+                                    <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="space-y-6">
+                                            <h4 className="text-xs font-black uppercase tracking-widest text-vento-text-muted">Datos de Referencia</h4>
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-3 bg-vento-bg text-vento-primary rounded-2xl border border-vento-border shadow-sm">
+                                                        <Calendar size={20} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-vento-text-muted uppercase tracking-widest">Fecha</p>
+                                                        <p className="font-bold text-vento-text">{event.date}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-3 bg-vento-bg text-vento-primary rounded-2xl border border-vento-border shadow-sm">
+                                                        <MapPin size={20} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-vento-text-muted uppercase tracking-widest">Lugar</p>
+                                                        <p className="font-bold text-vento-text">{event.location}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            <h4 className="text-xs font-black uppercase tracking-widest text-vento-text-muted">Actividades</h4>
+                                            <div className="space-y-3">
+                                                {event.schedule && event.schedule.length > 0 ? (
+                                                    event.schedule.sort((a, b) => a.time.localeCompare(b.time)).map((item) => (
+                                                        <div key={item.id} className="flex items-center gap-4 p-3 bg-vento-bg/30 border border-vento-border rounded-2xl group transition-all hover:bg-vento-bg self-start">
+                                                            <span className="text-xs font-black text-vento-primary bg-vento-card px-2 py-1 rounded-lg border border-vento-border">
+                                                                {item.time}
+                                                            </span>
+                                                            <span className="flex-1 text-sm font-bold text-vento-text">{item.activity}</span>
+                                                            <button onClick={() => handleDeleteScheduleItem(item.id)} className="text-vento-text-muted hover:text-vento-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <XCircle size={16} />
+                                                            </button>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <p className="text-vento-text-muted text-xs italic py-4">No hay actividades definidas.</p>
+                                                )}
+                                                <form onSubmit={handleAddScheduleItem} className="flex gap-2 pt-4">
+                                                    <input type="time" required value={scheduleForm.time} onChange={e => setScheduleForm({ ...scheduleForm, time: e.target.value })} className="bg-vento-bg border border-vento-border rounded-xl px-2 py-2 text-xs text-vento-text focus:ring-2 focus:ring-vento-primary/20 w-24" />
+                                                    <input type="text" required placeholder="Ceremonia..." value={scheduleForm.activity} onChange={e => setScheduleForm({ ...scheduleForm, activity: e.target.value })} className="bg-vento-bg border border-vento-border rounded-xl px-3 py-2 text-xs text-vento-text focus:ring-2 focus:ring-vento-primary/20 flex-1" />
+                                                    <button type="submit" className="p-2 bg-vento-primary text-white rounded-xl hover:opacity-90 transition-all shadow-md"><Plus size={16} /></button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-8">
+                                {/* Preview Card */}
+                                <div className="bg-vento-card rounded-[2.5rem] border border-vento-border overflow-hidden shadow-xl sticky top-28">
+                                    <div className="p-6 border-b border-vento-border bg-vento-bg/50 flex items-center justify-between">
+                                        <h3 className="font-black text-xs uppercase tracking-widest">Live Preview</h3>
+                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[8px] font-black rounded uppercase tracking-[0.2em] border border-emerald-500/20">
+                                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" /> Live
+                                        </div>
+                                    </div>
+                                    <div className="p-8 flex justify-center bg-vento-bg/20">
+                                        <div
+                                            className="w-full max-w-[200px] border-4 border-vento-card rounded-[2rem] shadow-2xl overflow-hidden aspect-[9/16] pointer-events-none scale-100"
+                                            style={{
+                                                fontFamily: getTheme(event.theme || 'romantic-rose').fonts.body,
+                                                backgroundColor: getTheme(event.theme || 'romantic-rose').colors.background
+                                            }}
+                                        >
+                                            <div className="p-4 text-center space-y-4">
+                                                <div className="inline-block p-2 rounded-full mb-2" style={{ backgroundColor: getTheme(event.theme || 'romantic-rose').colors.primaryLight }}>
+                                                    <Heart size={16} fill={getTheme(event.theme || 'romantic-rose').colors.primary} color={getTheme(event.theme || 'romantic-rose').colors.primary} />
+                                                </div>
+                                                <h5 className="text-sm font-black leading-tight" style={{ color: getTheme(event.theme || 'romantic-rose').colors.text }}>{event.name}</h5>
+                                                <button className="px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest w-full" style={{ backgroundColor: getTheme(event.theme || 'romantic-rose').colors.primary, color: '#fff' }}>Confirmar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-6">
+                                        <button onClick={() => window.open(`/invitacion/${eventId}/preview`, '_blank')} className="w-full py-3 bg-vento-bg text-vento-primary border border-vento-primary/20 rounded-2xl hover:bg-vento-primary hover:text-white transition-all font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">
+                                            Pantalla Completa <ExternalLink size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Dangerous Zone */}
+                                <div className="bg-vento-primary/5 rounded-[2.5rem] border border-vento-primary/10 overflow-hidden">
+                                    <div className="p-6 bg-vento-primary/10 border-b border-vento-primary/10">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-vento-primary">Precaución</h4>
+                                    </div>
+                                    <div className="p-6">
+                                        <p className="text-[10px] font-bold text-vento-primary/70 mb-4">Eliminar este evento borrará permanentemente toda la información de invitados y fotos.</p>
+                                        <button
+                                            onClick={handleDeleteEvent}
+                                            className="w-full py-3 bg-vento-primary/10 text-vento-primary rounded-2xl hover:bg-vento-primary hover:text-white transition-all font-black text-[10px] uppercase tracking-widest border border-vento-primary/20"
+                                        >
+                                            Eliminar Evento
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </main>
+
+            {/* Modal Agregar Invitado */}
+            {isAddGuestModalOpen && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-md">
+                    <div className="bg-vento-card rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border border-vento-border">
+                        <div className="p-8 border-b border-vento-border flex justify-between items-center bg-vento-bg/50">
+                            <h3 className="text-2xl font-black font-serif italic tracking-tighter">NUEVO <span className="text-vento-primary">INVITADO</span></h3>
+                            <button onClick={() => setIsAddGuestModalOpen(false)} className="text-vento-text-muted hover:text-vento-primary p-2 transition-colors">
+                                <XCircle size={24} />
                             </button>
                         </div>
-                    </form>
+                        <form onSubmit={handleAddGuest} className="p-8 space-y-6">
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-vento-text-muted mb-2 ml-1">Invitado o Familia</label>
+                                <input required type="text" value={guestForm.name} onChange={(e) => setGuestForm({ ...guestForm, name: e.target.value })} className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium" placeholder="P. ej. Familia García" />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-vento-text-muted mb-2 ml-1">Etiqueta de Grupo</label>
+                                <input type="text" value={guestForm.group} onChange={(e) => setGuestForm({ ...guestForm, group: e.target.value })} className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium" placeholder="P. ej. Amigos Novia" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-vento-text-muted mb-2 ml-1">Pases</label>
+                                    <input type="number" min="1" value={guestForm.passes} onChange={(e) => setGuestForm({ ...guestForm, passes: parseInt(e.target.value) })} className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-black" />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-vento-text-muted mb-2 ml-1">Estatus Actual</label>
+                                    <select value={guestForm.status} onChange={(e) => setGuestForm({ ...guestForm, status: e.target.value as "Confirmado" | "Pendiente" | "Declinado" })} className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-bold appearance-none">
+                                        <option value="Pendiente">Pendiente</option>
+                                        <option value="Confirmado">Confirmado</option>
+                                        <option value="Declinado">Declinado</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="pt-4 flex gap-3">
+                                <button type="button" onClick={() => setIsAddGuestModalOpen(false)} className="flex-1 py-4 text-vento-text-muted font-bold hover:bg-vento-bg rounded-2xl transition-colors">Cancelar</button>
+                                <button type="submit" className="flex-1 py-4 bg-vento-primary text-white font-black rounded-2xl hover:opacity-90 transition-all shadow-xl shadow-vento-primary/20 uppercase tracking-widest text-xs">Guardar</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </div>
-        )
-    }
-        </div >
+            )}
+        </div>
     );
 }

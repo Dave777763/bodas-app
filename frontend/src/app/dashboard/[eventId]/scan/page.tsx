@@ -82,18 +82,29 @@ export default function ScanPage({ params }: { params: Promise<{ eventId: string
     };
 
     return (
-        <div className="min-h-screen bg-black text-white flex flex-col">
+        <div className="min-h-screen bg-vento-bg text-vento-text flex flex-col transition-colors duration-500">
             {/* Header */}
-            <div className="p-4 flex items-center gap-4 bg-gray-900 border-b border-gray-800">
-                <Link href={`/dashboard/${eventId}`} className="p-2 bg-gray-800 rounded-full hover:bg-gray-700">
-                    <ArrowLeft size={20} />
-                </Link>
-                <h1 className="font-bold text-lg">Escanear Entradas</h1>
+            <div className="p-6 flex items-center justify-between bg-vento-card border-b border-vento-border shadow-sm">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => router.back()}
+                        className="p-2.5 bg-vento-bg rounded-xl hover:bg-vento-primary hover:text-white transition-all shadow-sm group"
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
+                    <div>
+                        <h1 className="font-black font-serif italic tracking-tight text-xl">VENTO <span className="text-vento-primary not-italic text-sm ml-1">SCANNER</span></h1>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-text-muted">Control de Acceso</p>
+                    </div>
+                </div>
             </div>
 
             {/* Scanner Area */}
-            <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-                <div className="w-full max-w-sm aspect-square bg-gray-900 rounded-3xl overflow-hidden relative shadow-2xl border border-gray-800">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+                <div className="w-full max-w-sm aspect-square bg-vento-card rounded-[2.5rem] overflow-hidden relative shadow-2xl border border-vento-border group">
+                    {/* Scanner Frame Decoration */}
+                    <div className="absolute inset-0 border-[16px] border-vento-bg/50 pointer-events-none z-10" />
+
                     {status === "idle" || status === "loading" ? (
                         <Scanner
                             onScan={(result) => result[0] && handleScan(result[0].rawValue)}
@@ -108,26 +119,26 @@ export default function ScanPage({ params }: { params: Promise<{ eventId: string
                             }}
                         />
                     ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-10 p-6 text-center animate-in fade-in">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-vento-card z-20 p-8 text-center animate-in fade-in zoom-in duration-500">
                             {status === "success" ? (
                                 <>
-                                    <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-green-500/50">
-                                        <CheckCircle2 size={40} className="text-white" />
+                                    <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-emerald-500/40 animate-bounce">
+                                        <CheckCircle2 size={48} className="text-white" />
                                     </div>
-                                    <h2 className="text-2xl font-bold text-green-400">¡Acceso Permitido!</h2>
-                                    <p className="text-gray-300 mt-2 text-lg">{guestName}</p>
-                                    <p className="text-gray-500 text-sm mt-8">Escaneando siguiente...</p>
+                                    <h2 className="text-3xl font-black text-emerald-500 mb-2 italic tracking-tighter">¡BIENVENIDO!</h2>
+                                    <p className="text-vento-text font-bold text-xl mb-1">{guestName}</p>
+                                    <p className="text-vento-text-muted text-xs font-black uppercase tracking-widest mt-8">Escaneando siguiente...</p>
                                 </>
                             ) : (
                                 <>
-                                    <div className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-red-500/50">
-                                        <XCircle size={40} className="text-white" />
+                                    <div className="w-24 h-24 bg-vento-primary rounded-full flex items-center justify-center mb-6 shadow-xl shadow-vento-primary/40 animate-pulse">
+                                        <XCircle size={48} className="text-white" />
                                     </div>
-                                    <h2 className="text-2xl font-bold text-red-400">¡Alerta!</h2>
-                                    <p className="text-gray-300 mt-2 text-lg">{message}</p>
+                                    <h2 className="text-3xl font-black text-vento-primary mb-2 italic tracking-tighter">¡ALERTA!</h2>
+                                    <p className="text-vento-text font-bold text-lg">{message}</p>
                                     <button
                                         onClick={() => setStatus("idle")}
-                                        className="mt-8 px-6 py-2 bg-gray-800 rounded-full text-sm font-bold hover:bg-gray-700 transition"
+                                        className="mt-10 px-8 py-3 bg-vento-primary text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:opacity-90 transition shadow-lg shadow-vento-primary/20"
                                     >
                                         Intentar de nuevo
                                     </button>
@@ -138,16 +149,21 @@ export default function ScanPage({ params }: { params: Promise<{ eventId: string
 
                     {/* Loading Overlay */}
                     {status === "loading" && (
-                        <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center z-20 backdrop-blur-sm">
-                            <Loader2 className="animate-spin text-white mb-2" size={40} />
-                            <p className="font-medium">{message}</p>
+                        <div className="absolute inset-0 bg-vento-bg/60 flex flex-col items-center justify-center z-30 backdrop-blur-md">
+                            <Loader2 className="animate-spin text-vento-primary mb-4" size={48} />
+                            <p className="font-black text-xs uppercase tracking-[0.2em] text-vento-primary">{message}</p>
                         </div>
                     )}
                 </div>
 
-                <p className="text-center text-gray-500 mt-8 text-sm">
-                    Apunta la cámara al código QR del invitado.
-                </p>
+                <div className="text-center mt-10 space-y-2">
+                    <p className="text-vento-text font-bold text-sm">
+                        Coloca el código QR dentro del recuadro
+                    </p>
+                    <p className="text-vento-text-muted text-[10px] font-black uppercase tracking-widest">
+                        El check-in se registrará automáticamente
+                    </p>
+                </div>
             </div>
         </div>
     );

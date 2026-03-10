@@ -162,7 +162,7 @@ export default function CameraCapture({ eventId, guestId, guestName, theme }: Ca
                         <Camera size={28} style={{ color: theme.colors.primary }} />
                     </div>
                     <span className="font-bold text-sm" style={{ color: theme.colors.primary }}>Tomar una foto y compartir</span>
-                    <span className="text-[10px] text-gray-400">¡Comparte tus mejores momentos con los novios!</span>
+                    <span className="text-[10px] text-gray-400">¡Comparte tus mejores momentos con todos!</span>
                 </button>
             )}
 
