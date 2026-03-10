@@ -6,20 +6,44 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --vento-bg: #f9fafb;
+}
+
+/* Temas Globales Vento */
+.vento-ui-light {
+  --vento-bg: #f9fafb;
+  --vento-card: #ffffff;
+  --vento-text: #111827;
+  --vento-text-muted: #6b7280;
+  --vento-border: #f3f4f6;
+  --vento-primary: #e11d48;
+}
+
+.vento-ui-dark {
+  --vento-bg: #0f172a;
+  --vento-card: #1e293b;
+  --vento-text: #f8fafc;
+  --vento-text-muted: #94a3b8;
+  --vento-border: #334155;
+  --vento-primary: #fb7185;
+}
+
+.vento-ui-matrix {
+  --vento-bg: #000000;
+  --vento-card: #050505;
+  --vento-text: #00ff41;
+  --vento-text-muted: #008f11;
+  --vento-border: #003b00;
+  --vento-primary: #00ff41;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #ffffff;
-    --foreground: #171717;
-  }
+  --color-vento-bg: var(--vento-bg);
+  --color-vento-card: var(--vento-card);
+  --color-vento-text: var(--vento-text);
+  --color-vento-text-muted: var(--vento-text-muted);
+  --color-vento-border: var(--vento-border);
+  --color-vento-primary: var(--vento-primary);
 }
 
 body {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
+import { UIThemeProvider } from "@/context/UIThemeContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EventosApp - Gestión Integral de Bodas y XV",
-  description: "Organiza tu evento perfecto con nuestro gestor integral.",
+  title: "Vento - Gestión Inteligente de Eventos",
+  description: "La plataforma universal para organizar tus momentos más importantes.",
 };
 
 export default function RootLayout({
@@ -38,7 +39,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <UIThemeProvider>
+            {children}
+          </UIThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

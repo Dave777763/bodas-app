@@ -6,10 +6,12 @@ import { Plus, X, Loader2, Calendar, MapPin, ChevronRight, PartyPopper, Link as 
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, collectionGroup, where } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
+import { useUITheme } from "@/context/UIThemeContext";
+import { Sun, Moon, Terminal } from "lucide-react";
 
 const ADMIN_EMAIL = "marroquindavid635@gmail.com";
 
-interface WeddingEvent {
+interface VentoEvent {
     id: string;
     name: string;
     date: string;
@@ -20,11 +22,12 @@ interface WeddingEvent {
 
 export default function DashboardPage() {
     const { user } = useAuth();
+    const { theme, setTheme } = useUITheme();
     const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
-    const [events, setEvents] = useState<WeddingEvent[]>([]);
+    const [events, setEvents] = useState<VentoEvent[]>([]);
     const [globalStats, setGlobalStats] = useState({ confirmados: 0, pendientes: 0 });
     const [formData, setFormData] = useState({
         name: "",
@@ -94,7 +97,7 @@ export default function DashboardPage() {
             const eventsList = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
-            })) as WeddingEvent[];
+            })) as VentoEvent[];
 
             setEvents(eventsList);
             setFetching(false);
@@ -127,7 +130,7 @@ export default function DashboardPage() {
 
             // Opcional: Podríamos disparar un refresh de los datos aquí
             // Por ahora, solo cerramos el modal
-            alert("¡Evento guardado con éxito en Firebase!");
+            console.log("¡Evento guardado con éxito en Firebase!");
         } catch (error: unknown) {
             console.error("ERROR DETALLADO de Firebase:", error);
             alert(`Error al guardar: ${error instanceof Error ? error.message : "Revisa la consola"}`);
@@ -142,52 +145,75 @@ export default function DashboardPage() {
     };
 
     return (
-        <div className="p-8 min-h-screen bg-gray-50/50">
-            <h1 className="text-3xl font-bold mb-6 font-serif text-gray-800">Panel del Anfitrión</h1>
+        <div className="p-8 min-h-screen bg-vento-bg text-vento-text">
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-4xl font-black font-serif tracking-tight">Vento <span className="text-vento-primary">Dashboard</span></h1>
+
+                <div className="flex items-center gap-2 bg-vento-card p-1 rounded-2xl border border-vento-border shadow-sm">
+                    <button
+                        onClick={() => setTheme("light")}
+                        className={`p-2 rounded-xl transition ${theme === "light" ? "bg-vento-primary text-white shadow-md" : "text-vento-text-muted hover:bg-vento-bg"}`}
+                    >
+                        <Sun size={18} />
+                    </button>
+                    <button
+                        onClick={() => setTheme("dark")}
+                        className={`p-2 rounded-xl transition ${theme === "dark" ? "bg-vento-primary text-white shadow-md" : "text-vento-text-muted hover:bg-vento-bg"}`}
+                    >
+                        <Moon size={18} />
+                    </button>
+                    <button
+                        onClick={() => setTheme("matrix")}
+                        className={`p-2 rounded-xl transition ${theme === "matrix" ? "bg-vento-primary text-white shadow-md" : "text-vento-text-muted hover:bg-vento-bg"}`}
+                    >
+                        <Terminal size={18} />
+                    </button>
+                </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                 {/* Stats Cards */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wide">Confirmados</h3>
-                    <p className="text-4xl font-bold text-rose-600 mt-2">{globalStats.confirmados}</p>
+                <div className="bg-vento-card p-7 rounded-3xl shadow-sm border border-vento-border group hover:border-vento-primary transition-all duration-300">
+                    <h3 className="text-vento-text-muted text-xs font-bold uppercase tracking-widest mb-2">Confirmados</h3>
+                    <p className="text-5xl font-black text-vento-primary tabular-nums">{globalStats.confirmados}</p>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wide">Pendientes</h3>
-                    <p className="text-4xl font-bold text-amber-500 mt-2">{globalStats.pendientes}</p>
+                <div className="bg-vento-card p-7 rounded-3xl shadow-sm border border-vento-border group hover:border-vento-primary transition-all duration-300">
+                    <h3 className="text-vento-text-muted text-xs font-bold uppercase tracking-widest mb-2">Pendientes</h3>
+                    <p className="text-5xl font-black text-amber-500 tabular-nums">{globalStats.pendientes}</p>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 className="text-gray-500 text-sm font-medium uppercase tracking-wide">Total Eventos</h3>
-                    <p className="text-4xl font-bold text-blue-600 mt-2">{events.length}</p>
+                <div className="bg-vento-card p-7 rounded-3xl shadow-sm border border-vento-border group hover:border-vento-primary transition-all duration-300">
+                    <h3 className="text-vento-text-muted text-xs font-bold uppercase tracking-widest mb-2">Total Eventos</h3>
+                    <p className="text-5xl font-black text-blue-500 tabular-nums">{events.length}</p>
                 </div>
             </div>
 
             <div>
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold font-serif text-gray-800">Mis Eventos</h2>
+                    <h2 className="text-2xl font-bold font-serif">Mis Sesiones Vento</h2>
                     {events.length > 0 && (
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition flex items-center gap-2 shadow-md"
+                            className="px-6 py-2.5 bg-vento-primary text-white rounded-2xl hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-vento-primary/20 font-bold"
                         >
-                            <Plus size={20} /> Crear Nuevo
+                            <Plus size={20} /> Nuevo Evento
                         </button>
                     )}
                 </div>
 
                 {fetching ? (
                     <div className="flex justify-center p-20">
-                        <Loader2 className="animate-spin text-rose-500" size={40} />
+                        <Loader2 className="animate-spin text-vento-primary" size={40} />
                     </div>
                 ) : events.length === 0 ? (
-                    <div className="bg-white p-12 rounded-xl border border-dashed border-gray-300 text-center">
-                        <p className="text-gray-500 mb-4 text-lg">No tienes eventos creados aún.</p>
+                    <div className="bg-vento-card p-16 rounded-3xl border border-dashed border-vento-border text-center">
+                        <p className="text-vento-text-muted mb-6 text-xl">Bienvenido a Vento. Comienza creando tu primer gran momento.</p>
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="px-6 py-3 bg-white text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-50 transition font-medium"
+                            className="px-8 py-3 bg-vento-primary text-white rounded-2xl hover:opacity-90 transition font-bold shadow-xl shadow-vento-primary/20"
                         >
-                            Comenzar ahora
+                            Crear mi primer evento
                         </button>
                     </div>
                 ) : (
@@ -196,22 +222,22 @@ export default function DashboardPage() {
                             <div
                                 key={event.id}
                                 onClick={() => router.push(`/dashboard/${event.id}`)}
-                                className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition group cursor-pointer"
+                                className="bg-vento-card p-6 rounded-3xl border border-vento-border shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group cursor-pointer"
                             >
-                                <div className="flex justify-between items-start mb-3">
-                                    <div className="p-2 bg-rose-50 rounded-lg text-rose-600">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="p-3 bg-vento-bg rounded-2xl text-vento-primary group-hover:bg-vento-primary group-hover:text-white transition-colors duration-300">
                                         <PartyPopper size={24} />
                                     </div>
-                                    <ChevronRight className="text-gray-300 group-hover:text-rose-500 transition" />
+                                    <ChevronRight className="text-vento-text-muted group-hover:text-vento-primary transition-colors" />
                                 </div>
-                                <h3 className="text-lg font-bold text-gray-800 mb-2">{event.name}</h3>
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                                        <Calendar size={14} />
+                                <h3 className="text-xl font-bold mb-3">{event.name}</h3>
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2 text-sm text-vento-text-muted">
+                                        <Calendar size={14} className="text-vento-primary" />
                                         <span>{event.date}</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                                        <MapPin size={14} />
+                                    <div className="flex items-center gap-2 text-sm text-vento-text-muted">
+                                        <MapPin size={14} className="text-vento-primary" />
                                         <span>{event.location}</span>
                                     </div>
                                     {event.mapUrl && (
@@ -229,79 +255,78 @@ export default function DashboardPage() {
 
             {/* Modal de Creación de Evento */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                            <h3 className="text-xl font-bold text-gray-800">Nuevo Evento</h3>
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-md">
+                    <div className="bg-vento-card rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-300">
+                        <div className="p-8 border-b border-vento-border flex justify-between items-center bg-vento-bg/50">
+                            <h3 className="text-2xl font-black italic tracking-tighter">VENTO <span className="text-vento-primary text-sm not-italic font-bold ml-2">NUEVO EVENTO</span></h3>
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition"
+                                className="text-vento-text-muted hover:text-vento-primary p-2 rounded-full hover:bg-vento-bg transition-colors"
                             >
-                                <X size={20} />
+                                <X size={24} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleCreateEvent} className="p-6 space-y-4">
+                        <form onSubmit={handleCreateEvent} className="p-8 space-y-5">
                             <div>
-                                <label className="block text-sm font-bold text-gray-900 mb-1">Nombre del Evento</label>
+                                <label className="block text-xs font-black uppercase tracking-widest text-vento-text-muted mb-2 ml-1">¿Qué celebramos?</label>
                                 <input
                                     type="text"
                                     name="name"
                                     value={formData.name}
                                     onChange={handleChange}
-                                    placeholder="Ej. Boda de Ana y Carlos"
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition"
+                                    placeholder="Ej. Gala Anual o Fiesta de David"
+                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text placeholder-vento-text-muted/50 focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium"
                                     required
                                     disabled={loading}
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-900 mb-1">Fecha</label>
+                                <label className="block text-xs font-black uppercase tracking-widest text-vento-text-muted mb-2 ml-1">¿Cuándo?</label>
                                 <input
                                     type="date"
                                     name="date"
                                     value={formData.date}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-300 text-gray-900 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition"
+                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium"
                                     required
                                     disabled={loading}
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-900 mb-1">Ubicación (Nombre del Lugar)</label>
+                                <label className="block text-xs font-black uppercase tracking-widest text-vento-text-muted mb-2 ml-1">¿Dónde?</label>
                                 <input
                                     type="text"
                                     name="location"
                                     value={formData.location}
                                     onChange={handleChange}
-                                    placeholder="Ej. Salón Las Flores"
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition"
+                                    placeholder="Nombre del lugar"
+                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text placeholder-vento-text-muted/50 focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium"
                                     required
                                     disabled={loading}
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-gray-900 mb-1">Link de Google Maps (Opcional)</label>
+                                <label className="block text-xs font-black uppercase tracking-widest text-vento-text-muted mb-2 ml-1">Enlace de Maps (Opcional)</label>
                                 <input
                                     type="url"
                                     name="mapUrl"
                                     value={formData.mapUrl}
                                     onChange={handleChange}
-                                    placeholder="Ej. https://maps.app.goo.gl/..."
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition"
+                                    placeholder="https://maps.app.goo.gl/..."
+                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text placeholder-vento-text-muted/50 focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium"
                                     disabled={loading}
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Si lo dejas vacío, buscaremos por el nombre del lugar.</p>
                             </div>
 
                             <div className="pt-4 flex justify-end gap-3">
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                                    className="px-6 py-3 text-vento-text-muted hover:bg-vento-bg rounded-2xl transition-colors font-bold"
                                     disabled={loading}
                                 >
                                     Cancelar
@@ -309,15 +334,15 @@ export default function DashboardPage() {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="px-6 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition font-medium shadow-lg shadow-rose-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                                    className="px-8 py-3 bg-vento-primary text-white rounded-2xl hover:opacity-90 transition-all font-bold shadow-xl shadow-vento-primary/20 disabled:opacity-50 flex items-center gap-2"
                                 >
                                     {loading ? (
                                         <>
                                             <Loader2 size={18} className="animate-spin" />
-                                            Guardando...
+                                            Guardando
                                         </>
                                     ) : (
-                                        "Guardar Evento"
+                                        "Crear Evento"
                                     )}
                                 </button>
                             </div>
