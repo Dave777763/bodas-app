@@ -18,6 +18,7 @@ import AddToCalendar from "@/components/AddToCalendar";
 import FallingPetals from "@/components/FallingPetals";
 import Countdown from "@/components/Countdown";
 import { getTheme } from "@/lib/themes";
+import CameraCapture from "@/components/CameraCapture";
 
 interface ScheduleItem {
     id: string;
@@ -455,6 +456,18 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
                                             </div>
                                             <p className="text-xs text-gray-400 mt-2">Muestra este código en la entrada</p>
                                         </div>
+                                    )}
+
+                                    {guest.status === "Confirmado" && (
+                                        <>
+                                            <hr className="border-rose-100 my-6" />
+                                            <CameraCapture
+                                                eventId={eventId}
+                                                guestId={guestId}
+                                                guestName={guest.name}
+                                                theme={theme}
+                                            />
+                                        </>
                                     )}
                                     <button
                                         onClick={() => setRsvpDone(false)}
