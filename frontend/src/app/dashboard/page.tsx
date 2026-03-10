@@ -4,7 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X, Loader2, Calendar, MapPin, ChevronRight, PartyPopper, Link as LinkIcon } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, collectionGroup } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, collectionGroup, where } from "firebase/firestore";
+import { useAuth } from "@/context/AuthContext";
+
+const ADMIN_EMAIL = "marroquindavid635@gmail.com";
 
 interface WeddingEvent {
     id: string;
@@ -16,6 +19,7 @@ interface WeddingEvent {
 }
 
 export default function DashboardPage() {
+    const { user } = useAuth();
     const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -29,9 +33,18 @@ export default function DashboardPage() {
         mapUrl: ""
     });
 
-    // Escuchar invitados de TODOS los eventos (collectionGroup)
+    // Escuchar invitados de TODOS los eventos del usuario (collectionGroup)
     useEffect(() => {
-        const guestsQuery = query(collectionGroup(db, "guests"));
+        if (!user) return;
+
+        const isAdmin = user.email === ADMIN_EMAIL;
+
+        let guestsQuery = query(collectionGroup(db, "guests"));
+
+        // Si no es admin, filtramos por el dueño del evento
+        if (!isAdmin) {
+            guestsQuery = query(collectionGroup(db, "guests"), where("eventOwnerId", "==", user.uid));
+        }
 
         const unsubscribe = onSnapshot(guestsQuery, (snapshot) => {
             let totalConfirmados = 0;
@@ -51,14 +64,31 @@ export default function DashboardPage() {
                 confirmados: totalConfirmados,
                 pendientes: totalPendientes
             });
+        }, (err) => {
+            console.warn("Stats query error (likely missing index):", err);
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [user]);
 
     // Escuchar eventos en tiempo real
     useEffect(() => {
-        const q = query(collection(db, "events"), orderBy("createdAt", "desc"));
+        if (!user) return;
+
+        const isAdmin = user.email === ADMIN_EMAIL;
+        let q;
+
+        if (isAdmin) {
+            // Admin ve todo
+            q = query(collection(db, "events"), orderBy("createdAt", "desc"));
+        } else {
+            // Usuario común solo ve lo suyo
+            q = query(
+                collection(db, "events"),
+                where("userId", "==", user.uid),
+                orderBy("createdAt", "desc")
+            );
+        }
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const eventsList = snapshot.docs.map(doc => ({
@@ -74,7 +104,7 @@ export default function DashboardPage() {
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [user]);
 
     const handleCreateEvent = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -85,6 +115,8 @@ export default function DashboardPage() {
             console.log("Intentando addDoc en colección 'events'...");
             const docRef = await addDoc(collection(db, "events"), {
                 ...formData,
+                userId: user?.uid,
+                ownerEmail: user?.email,
                 createdAt: serverTimestamp(),
             });
             console.log("Evento guardado con ID:", docRef.id);

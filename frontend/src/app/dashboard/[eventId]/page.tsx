@@ -25,6 +25,7 @@ import {
     Image as ImageIcon
 } from "lucide-react";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 import {
     doc,
     getDoc,
@@ -38,6 +39,8 @@ import {
     arrayUnion
 } from "firebase/firestore";
 import ThemeSelector from "@/components/ThemeSelector";
+
+const ADMIN_EMAIL = "marroquindavid635@gmail.com";
 import { getTheme } from "@/lib/themes";
 import InvitationGenerator from "@/components/InvitationGenerator";
 import PhotoGallery from "@/components/PhotoGallery";
@@ -50,10 +53,12 @@ interface ScheduleItem {
 }
 
 interface WeddingEvent {
-    id: string;
+    id: string; // Se mantiene como requerido para el resto del código
     name: string;
     date: string;
     location: string;
+    userId?: string;
+    ownerEmail?: string;
     schedule?: ScheduleItem[];
     theme?: string;
 }
@@ -66,10 +71,12 @@ interface Guest {
     status: "Confirmado" | "Pendiente" | "Declinado";
     attended?: boolean;
     attendedAt?: unknown;
+    eventOwnerId?: string;
 }
 
 export default function EventDetailPage({ params }: { params: Promise<{ eventId: string }> }) {
     const { eventId } = use(params);
+    const { user } = useAuth();
     const router = useRouter();
     const [event, setEvent] = useState<WeddingEvent | null>(null);
     const [activeTab, setActiveTab] = useState<"general" | "invitados" | "config" | "disenar" | "galeria">("invitados");
@@ -99,7 +106,17 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         const eventRef = doc(db, "events", eventId);
         const unsubscribeEvent = onSnapshot(eventRef, (docSnap) => {
             if (docSnap.exists()) {
-                setEvent({ id: docSnap.id, ...docSnap.data() } as WeddingEvent);
+                const data = docSnap.data();
+
+                // Seguridad: Verificar si el usuario tiene permiso (Dueño o Admin)
+                const isAdmin = user?.email === ADMIN_EMAIL;
+                if (!isAdmin && data.userId && data.userId !== user?.uid) {
+                    console.warn("Acceso no autorizado a este evento");
+                    router.push("/dashboard");
+                    return;
+                }
+
+                setEvent({ ...data, id: docSnap.id } as WeddingEvent);
             } else {
                 console.error("Evento no encontrado");
                 router.push("/dashboard");
@@ -128,13 +145,14 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
             unsubscribeEvent();
             unsubscribeGuests();
         };
-    }, [eventId, router]);
+    }, [eventId, router, user]);
 
     const handleAddGuest = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             await addDoc(collection(db, "events", eventId, "guests"), {
                 ...guestForm,
+                eventOwnerId: user?.uid, // Importante para stats globales
                 createdAt: serverTimestamp()
             });
             setGuestForm({ name: "", group: "", passes: 1, status: "Pendiente" });
