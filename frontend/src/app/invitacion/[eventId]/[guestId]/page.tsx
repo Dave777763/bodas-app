@@ -473,7 +473,7 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
                                         onClick={() => setRsvpDone(false)}
                                         className="text-rose-500 text-sm font-bold hover:underline"
                                     >
-                                        Cambiar respuesta
+                                        CAMBIAR RESPUESTA (MODO TEST)
                                     </button>
                                 </div>
                             )}
