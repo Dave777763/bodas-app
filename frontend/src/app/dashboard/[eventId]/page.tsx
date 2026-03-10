@@ -21,7 +21,8 @@ import {
     Palette,
     Heart,
     ExternalLink,
-    FileImage
+    FileImage,
+    Image as ImageIcon
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import {
@@ -39,6 +40,7 @@ import {
 import ThemeSelector from "@/components/ThemeSelector";
 import { getTheme } from "@/lib/themes";
 import InvitationGenerator from "@/components/InvitationGenerator";
+import PhotoGallery from "@/components/PhotoGallery";
 
 
 interface ScheduleItem {
@@ -70,7 +72,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     const { eventId } = use(params);
     const router = useRouter();
     const [event, setEvent] = useState<WeddingEvent | null>(null);
-    const [activeTab, setActiveTab] = useState<"general" | "invitados" | "config" | "disenar">("invitados");
+    const [activeTab, setActiveTab] = useState<"general" | "invitados" | "config" | "disenar" | "galeria">("invitados");
     const [loading, setLoading] = useState(true);
     const [guests, setGuests] = useState<Guest[]>([]);
     const [isAddGuestModalOpen, setIsAddGuestModalOpen] = useState(false);
@@ -278,6 +280,12 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                         <FileImage size={18} /> Diseñar Invitación
                     </button>
                     <button
+                        onClick={() => setActiveTab("galeria")}
+                        className={`px-6 py-2 rounded-lg flex items-center gap-2 font-medium transition ${activeTab === "galeria" ? "bg-amber-50 text-amber-600 shadow-sm" : "text-gray-500 hover:bg-gray-50"}`}
+                    >
+                        <ImageIcon size={18} /> Galería de Fotos
+                    </button>
+                    <button
                         onClick={() => setActiveTab("general")}
                         className={`px-6 py-2 rounded-lg flex items-center gap-2 font-medium transition ${activeTab === "general" ? "bg-rose-50 text-rose-600 shadow-sm" : "text-gray-500 hover:bg-gray-50"}`}
                     >
@@ -458,6 +466,18 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === "galeria" && (
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+                            <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                                <ImageIcon size={28} className="text-amber-500" />
+                                Momentos del Evento
+                            </h3>
+                            <PhotoGallery eventId={eventId} />
                         </div>
                     </div>
                 )}
