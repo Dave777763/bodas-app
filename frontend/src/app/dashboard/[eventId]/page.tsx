@@ -72,6 +72,7 @@ interface Guest {
     name: string;
     group: string;
     passes: number;
+    confirmedPasses?: number;
     status: "Confirmado" | "Pendiente" | "Declinado";
     attended?: boolean;
     attendedAt?: unknown;
@@ -361,7 +362,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                             <div className="bg-vento-card p-5 rounded-3xl border border-vento-border shadow-sm">
                                 <p className="text-[10px] text-vento-text-muted uppercase font-black tracking-widest mb-1">Confirmados</p>
                                 <p className="text-3xl font-black text-vento-primary tabular-nums">
-                                    {guests.reduce((acc, g) => acc + (g.status === "Confirmado" ? g.passes : 0), 0)}
+                                    {guests.reduce((acc, g) => acc + (g.status === "Confirmado" ? (g.confirmedPasses !== undefined ? g.confirmedPasses : g.passes) : 0), 0)}
                                 </p>
                             </div>
                             <div className="bg-vento-card p-5 rounded-3xl border border-vento-border shadow-sm">

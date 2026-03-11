@@ -53,19 +53,23 @@ export default function DashboardPage() {
         }
 
         const unsubscribe = onSnapshot(guestsQuery, (snapshot) => {
+            console.log(`Update Global Stats: ${snapshot.size} invitados encontrados`);
             let totalConfirmados = 0;
             let totalPendientes = 0;
 
             snapshot.docs.forEach(doc => {
                 const data = doc.data();
                 const passes = data.passes || 0;
+                const confirmed = data.confirmedPasses !== undefined ? data.confirmedPasses : passes;
+                
                 if (data.status === "Confirmado") {
-                    totalConfirmados += passes;
+                    totalConfirmados += confirmed;
                 } else if (data.status === "Pendiente") {
                     totalPendientes += passes;
                 }
             });
 
+            console.log("Stats calculadas:", { totalConfirmados, totalPendientes });
             setGlobalStats({
                 confirmados: totalConfirmados,
                 pendientes: totalPendientes
