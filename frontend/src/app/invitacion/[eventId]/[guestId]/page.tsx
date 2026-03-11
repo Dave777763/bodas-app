@@ -32,6 +32,7 @@ interface VentoEvent {
     date: string;
     location: string;
     mapUrl?: string;
+    imageUrl?: string;
     schedule?: ScheduleItem[];
     theme?: string;
 }
@@ -189,15 +190,21 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
             <div className="relative z-10 w-full flex flex-col items-center">
                 {/* Decoración Superior */}
                 <div className="w-full max-w-lg mb-8 text-center animate-fadeIn">
-                    <div
-                        className="inline-block p-3 rounded-full mb-4 animate-float"
-                        style={{
-                            backgroundColor: theme.colors.primaryLight,
-                            color: theme.colors.primary
-                        }}
-                    >
-                        <Heart size={32} fill="currentColor" />
-                    </div>
+                    {event.imageUrl ? (
+                        <div className="w-full max-w-lg aspect-video rounded-3xl overflow-hidden mb-6 shadow-2xl animate-scaleIn border-4 border-white">
+                            <img src={event.imageUrl} alt={event.name} className="w-full h-full object-cover" />
+                        </div>
+                    ) : (
+                        <div
+                            className="inline-block p-3 rounded-full mb-4 animate-float"
+                            style={{
+                                backgroundColor: theme.colors.primaryLight,
+                                color: theme.colors.primary
+                            }}
+                        >
+                            <Heart size={32} fill="currentColor" />
+                        </div>
+                    )}
                     <h2
                         className="font-medium tracking-[0.2em] uppercase text-sm mb-2"
                         style={{

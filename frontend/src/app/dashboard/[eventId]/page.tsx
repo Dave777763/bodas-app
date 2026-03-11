@@ -41,10 +41,12 @@ import {
 } from "firebase/firestore";
 import ThemeSelector from "@/components/ThemeSelector";
 
-const ADMIN_EMAIL = "marroquindavid635@gmail.com";
 import { getTheme } from "@/lib/themes";
 import InvitationGenerator from "@/components/InvitationGenerator";
 import PhotoGallery from "@/components/PhotoGallery";
+import MainImageUpload from "@/components/MainImageUpload";
+
+const ADMIN_EMAIL = "marroquindavid635@gmail.com";
 
 
 interface ScheduleItem {
@@ -60,6 +62,7 @@ interface VentoEvent {
     location: string;
     userId?: string;
     ownerEmail?: string;
+    imageUrl?: string;
     schedule?: ScheduleItem[];
     theme?: string;
 }
@@ -112,8 +115,11 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                 const data = docSnap.data();
 
                 // Seguridad: Verificar si el usuario tiene permiso (Dueño o Admin)
-                const isAdmin = user?.email === ADMIN_EMAIL;
-                if (!isAdmin && data.userId && data.userId !== user?.uid) {
+                const userEmail = user?.email?.toLowerCase().trim() || "";
+                const isAdmin = userEmail === "marroquindavid635@gmail.com";
+                
+                // Solo redirigir si el usuario ya cargó y NO es el dueño ni admin
+                if (user && !isAdmin && data.userId && data.userId !== user.uid) {
                     console.warn("Acceso no autorizado a este evento");
                     router.push("/dashboard");
                     return;
@@ -283,7 +289,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                             <ChevronLeft size={24} />
                         </button>
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-1">VENTO SESSION</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-1">VENTO SESSION 2.0</p>
                             <h1 className="text-2xl font-black font-serif italic line-clamp-1">{event.name}</h1>
                         </div>
                     </div>
@@ -312,19 +318,19 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                         onClick={() => setActiveTab("disenar")}
                         className={`px-8 py-3 rounded-2xl flex items-center gap-3 font-bold transition-all duration-300 ${activeTab === "disenar" ? "bg-vento-primary text-white shadow-lg shadow-vento-primary/20" : "text-vento-text-muted hover:bg-vento-bg"}`}
                     >
-                        <FileImage size={18} /> Diseño
+                        <FileImage size={18} /> Diseño de Invitación
                     </button>
                     <button
                         onClick={() => setActiveTab("galeria")}
                         className={`px-8 py-3 rounded-2xl flex items-center gap-3 font-bold transition-all duration-300 ${activeTab === "galeria" ? "bg-vento-primary text-white shadow-lg shadow-vento-primary/20" : "text-vento-text-muted hover:bg-vento-bg"}`}
                     >
-                        <ImageIcon size={18} /> Galería
+                        <ImageIcon size={18} /> Galería de Momentos
                     </button>
                     <button
                         onClick={() => setActiveTab("config")}
                         className={`px-8 py-3 rounded-2xl flex items-center gap-3 font-bold transition-all duration-300 ${activeTab === "config" ? "bg-vento-primary text-white shadow-lg shadow-vento-primary/20" : "text-vento-text-muted hover:bg-vento-bg"}`}
                     >
-                        <Settings size={18} /> Config
+                        <Settings size={18} /> Configuración de Evento
                     </button>
                 </div>
 
@@ -532,6 +538,16 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
                                 <div className="bg-vento-card rounded-[2.5rem] border border-vento-border overflow-hidden shadow-xl">
                                     <div className="p-8 border-b border-vento-border bg-vento-bg/50">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-1">Invitation Media</p>
+                                        <h3 className="text-2xl font-black font-serif italic text-vento-text">Imagen de Portada</h3>
+                                    </div>
+                                    <div className="p-8">
+                                        <MainImageUpload eventId={eventId} currentImageUrl={event.imageUrl} />
+                                    </div>
+                                </div>
+
+                                <div className="bg-vento-card rounded-[2.5rem] border border-vento-border overflow-hidden shadow-xl">
+                                    <div className="p-8 border-b border-vento-border bg-vento-bg/50">
                                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-1">Timing & Details</p>
                                         <h3 className="text-2xl font-black font-serif italic flex items-center gap-3">
                                             <Clock className="text-vento-primary" size={24} /> Información & Cronograma
@@ -609,9 +625,15 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                                             }}
                                         >
                                             <div className="p-4 text-center space-y-4">
-                                                <div className="inline-block p-2 rounded-full mb-2" style={{ backgroundColor: getTheme(event.theme || 'romantic-rose').colors.primaryLight }}>
-                                                    <Heart size={16} fill={getTheme(event.theme || 'romantic-rose').colors.primary} color={getTheme(event.theme || 'romantic-rose').colors.primary} />
-                                                </div>
+                                                {event.imageUrl ? (
+                                                    <div className="w-full aspect-video rounded-xl overflow-hidden mb-2 border border-vento-border">
+                                                        <img src={event.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="inline-block p-2 rounded-full mb-2" style={{ backgroundColor: getTheme(event.theme || 'romantic-rose').colors.primaryLight }}>
+                                                        <Heart size={16} fill={getTheme(event.theme || 'romantic-rose').colors.primary} color={getTheme(event.theme || 'romantic-rose').colors.primary} />
+                                                    </div>
+                                                )}
                                                 <h5 className="text-sm font-black leading-tight" style={{ color: getTheme(event.theme || 'romantic-rose').colors.text }}>{event.name}</h5>
                                                 <button className="px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest w-full" style={{ backgroundColor: getTheme(event.theme || 'romantic-rose').colors.primary, color: '#fff' }}>Confirmar</button>
                                             </div>

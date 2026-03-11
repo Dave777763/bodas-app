@@ -17,6 +17,7 @@ interface VentoEvent {
     date: string;
     location: string;
     mapUrl?: string;
+    imageUrl?: string;
     createdAt?: unknown;
 }
 
@@ -39,9 +40,10 @@ export default function DashboardPage() {
 
     // Escuchar invitados de TODOS los eventos del usuario (collectionGroup)
     useEffect(() => {
-        if (!user) return;
+        if (!user || !user.email) return;
 
-        const isAdmin = user.email === ADMIN_EMAIL;
+        const userEmail = user.email.toLowerCase().trim();
+        const isAdmin = userEmail === "marroquindavid635@gmail.com";
 
         let guestsQuery = query(collectionGroup(db, "guests"));
 
@@ -77,24 +79,25 @@ export default function DashboardPage() {
 
     // Escuchar eventos en tiempo real
     useEffect(() => {
-        if (!user) return;
+        if (!user || !user.email) return;
 
-        const isAdmin = user.email === ADMIN_EMAIL;
+        const userEmail = user.email.toLowerCase().trim();
+        const isAdmin = userEmail === "marroquindavid635@gmail.com";
         let q;
 
         if (isAdmin) {
             // Admin ve todo
-            q = query(collection(db, "events"), orderBy("createdAt", "desc"));
+            q = query(collection(db, "events"));
         } else {
             // Usuario común solo ve lo suyo
             q = query(
                 collection(db, "events"),
-                where("userId", "==", user.uid),
-                orderBy("createdAt", "desc")
+                where("userId", "==", user.uid)
             );
         }
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            console.log(`Fetch eventos exitoso. Documentos encontrados: ${snapshot.size}`);
             const eventsList = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -104,6 +107,7 @@ export default function DashboardPage() {
             setFetching(false);
         }, (error) => {
             console.error("Error fetching events:", error);
+            alert(`Error al cargar eventos: ${error.message}\nVerifica tus permisos en Firebase.`);
             setFetching(false);
         });
 
@@ -113,28 +117,32 @@ export default function DashboardPage() {
     const handleCreateEvent = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        console.log("Iniciando guardado de evento...", formData);
+        const normalizedEmail = (user?.email || "").toLowerCase().trim();
+        console.log("Iniciando guardado de evento...", { ...formData, ownerEmail: normalizedEmail });
 
         try {
-            console.log("Intentando addDoc en colección 'events'...");
             const docRef = await addDoc(collection(db, "events"), {
                 ...formData,
                 userId: user?.uid,
-                ownerEmail: user?.email,
+                ownerEmail: normalizedEmail,
                 createdAt: serverTimestamp(),
             });
             console.log("Evento guardado con ID:", docRef.id);
 
-            // Limpiar formulario y cerrar modal
             setFormData({ name: "", date: "", location: "", mapUrl: "" });
             setIsModalOpen(false);
-
-            // Opcional: Podríamos disparar un refresh de los datos aquí
-            // Por ahora, solo cerramos el modal
-            console.log("¡Evento guardado con éxito en Firebase!");
-        } catch (error: unknown) {
-            console.error("ERROR DETALLADO de Firebase:", error);
-            alert(`Error al guardar: ${error instanceof Error ? error.message : "Revisa la consola"}`);
+            console.log("¡Evento guardado con éxito!");
+        } catch (error: any) {
+            console.error("Error original de Firebase:", error);
+            
+            let message = "Error al guardar. ";
+            if (error.code === 'permission-denied') {
+                message += "No tienes permisos para escribir en la base de datos. Verifica que tu cuenta sea la correcta.";
+            } else {
+                message += error.message || "Revisa la consola.";
+            }
+            
+            alert(message);
         } finally {
             setLoading(false);
         }
@@ -149,8 +157,13 @@ export default function DashboardPage() {
         <div className="p-8 min-h-screen bg-vento-bg text-vento-text transition-colors duration-500">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
                 <div>
-                    <h1 className="text-4xl font-black font-serif tracking-tight mb-2">Vento <span className="text-vento-primary">Dashboard</span></h1>
-                    <p className="text-vento-text-muted text-sm font-medium">Gestiona todos tus grandes momentos desde un solo lugar.</p>
+                    <div className="flex items-center gap-3 mb-2">
+                        <h1 className="text-4xl font-black font-serif tracking-tight">Panel <span className="text-vento-primary">Vento 2.0</span></h1>
+                        {user?.email?.toLowerCase().trim() === "marroquindavid635@gmail.com" && (
+                            <span className="px-2 py-1 bg-rose-500 text-white text-[10px] font-black rounded-lg shadow-lg animate-pulse">ADMIN</span>
+                        )}
+                    </div>
+                    <p className="text-vento-text-muted text-sm font-medium">Gestiona todos tus grandes momentos desde un solo lugar. {user?.email}</p>
                 </div>
 
                 <div className="flex items-center gap-2 bg-vento-card p-1.5 rounded-2xl border border-vento-border shadow-lg">
@@ -214,14 +227,12 @@ export default function DashboardPage() {
                                 className="w-full pl-12 pr-6 py-3 bg-vento-card border border-vento-border rounded-2xl focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium text-sm shadow-sm"
                             />
                         </div>
-                        {events.length > 0 && (
-                            <button
-                                onClick={() => setIsModalOpen(true)}
-                                className="px-8 py-3 bg-vento-primary text-white rounded-2xl hover:opacity-90 transition-all flex items-center gap-3 shadow-xl shadow-vento-primary/20 font-black text-sm uppercase tracking-widest"
-                            >
-                                <Plus size={20} /> Nuevo
-                            </button>
-                        )}
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="px-8 py-3 bg-vento-primary text-white rounded-2xl hover:opacity-90 transition-all flex items-center gap-3 shadow-xl shadow-vento-primary/20 font-black text-sm uppercase tracking-widest"
+                        >
+                            <Plus size={20} /> Nuevo
+                        </button>
                     </div>
                 </div>
 
@@ -231,8 +242,23 @@ export default function DashboardPage() {
                     </div>
                 ) : events.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
                     <div className="bg-vento-card p-20 rounded-[2.5rem] border border-dashed border-vento-border text-center shadow-xl">
-                        <p className="text-vento-text-muted mb-6 text-lg font-medium italic">No se encontraron eventos que coincidan con tu búsqueda.</p>
-                        <button onClick={() => setSearchTerm("")} className="text-vento-primary font-black uppercase text-xs tracking-widest hover:underline">Limpiar Filtros</button>
+                        {searchTerm ? (
+                            <>
+                                <p className="text-vento-text-muted mb-6 text-lg font-medium italic">No se encontraron eventos que coincidan con tu búsqueda.</p>
+                                <button onClick={() => setSearchTerm("")} className="text-vento-primary font-black uppercase text-xs tracking-widest hover:underline">Limpiar Filtros</button>
+                            </>
+                        ) : (
+                            <>
+                                <PartyPopper size={48} className="mx-auto mb-6 text-vento-primary opacity-20" />
+                                <p className="text-vento-text-muted mb-8 text-lg font-medium italic">Aún no has creado ningún evento.</p>
+                                <button
+                                    onClick={() => setIsModalOpen(true)}
+                                    className="px-10 py-4 bg-vento-primary text-white rounded-[1.5rem] hover:opacity-90 transition-all flex items-center gap-3 shadow-2xl shadow-vento-primary/30 font-black text-sm uppercase tracking-widest mx-auto"
+                                >
+                                    <Plus size={20} /> Crear mi primer evento
+                                </button>
+                            </>
+                        )}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
