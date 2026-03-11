@@ -114,7 +114,7 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
         };
     }, [eventId, guestId]);
 
-    const handleRSVP = async (status: "Confirmado" | "Declinado") => {
+    const handleRSVP = async (status: "Confirmado" | "Declinado" | "Pendiente") => {
         console.log("INVITACION_DEBUG: Iniciando RSVP", { status, selectedPasses });
         setSubmitting(true);
         try {
@@ -125,9 +125,12 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
                 updatedAt: serverTimestamp()
             });
             console.log("INVITACION_DEBUG: Update Firestore Exitoso");
-            // No seteamos el estado local de forma agresiva, 
-            // dejamos que onSnapshot lo traiga del servidor para estar seguros
-            setRsvpDone(true);
+            
+            if (status === "Pendiente") {
+                setRsvpDone(false);
+            } else {
+                setRsvpDone(true);
+            }
         } catch (error: any) {
             console.error("INVITACION_DEBUG: Error updating RSVP:", error);
             alert(`Error al guardar: ${error.message || 'Error desconocido'}. Verifica tu conexión.`);
@@ -485,10 +488,11 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
                                         </>
                                     )}
                                     <button
-                                        onClick={() => setRsvpDone(false)}
-                                        className="text-rose-500 text-sm font-bold hover:underline"
+                                        onClick={() => handleRSVP("Pendiente")}
+                                        disabled={submitting}
+                                        className="text-rose-500 text-sm font-bold hover:underline disabled:opacity-50"
                                     >
-                                        CAMBIAR RESPUESTA
+                                        {submitting ? "PROCESANDO..." : "CAMBIAR RESPUESTA"}
                                     </button>
                                 </div>
                             )}
