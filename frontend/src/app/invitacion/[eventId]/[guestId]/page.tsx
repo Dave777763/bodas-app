@@ -94,6 +94,8 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
                     setSelectedPasses(guestData.passes);
                     if (guestData.status !== "Pendiente") {
                         setRsvpDone(true);
+                    } else {
+                        setRsvpDone(false);
                     }
                 } else {
                     console.log("INVITACION_DEBUG: No Guest found");
@@ -126,11 +128,13 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
             });
             console.log("INVITACION_DEBUG: Update Firestore Exitoso");
             
-            if (status === "Pendiente") {
-                setRsvpDone(false);
-            } else {
-                setRsvpDone(true);
-            }
+                if (status === "Pendiente") {
+                    setRsvpDone(false);
+                    alert("Respuesta cancelada. Tu estado ahora es 'Pendiente'.");
+                } else {
+                    setRsvpDone(true);
+                    alert("¡Respuesta guardada con éxito!");
+                }
         } catch (error: any) {
             console.error("INVITACION_DEBUG: Error updating RSVP:", error);
             alert(`Error al guardar: ${error.message || 'Error desconocido'}. Verifica tu conexión.`);
