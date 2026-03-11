@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X, Loader2, Calendar, MapPin, ChevronRight, PartyPopper, Link as LinkIcon } from "lucide-react";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, collectionGroup, where } from "firebase/firestore";
+import { ref, listAll, getMetadata } from "firebase/storage";
 import { useAuth } from "@/context/AuthContext";
 import { useUITheme } from "@/context/UIThemeContext";
-import { Sun, Moon, Terminal } from "lucide-react";
+import { Sun, Moon, Terminal, Database } from "lucide-react";
 
 const ADMIN_EMAIL = "marroquindavid635@gmail.com";
 
@@ -30,6 +31,7 @@ export default function DashboardPage() {
     const [fetching, setFetching] = useState(true);
     const [events, setEvents] = useState<VentoEvent[]>([]);
     const [globalStats, setGlobalStats] = useState({ confirmados: 0, pendientes: 0 });
+    const [storageStats, setStorageStats] = useState<{ totalBytes: number; formatted: string }>({ totalBytes: 0, formatted: "0 MB" });
     const [formData, setFormData] = useState({
         name: "",
         date: "",
@@ -109,6 +111,11 @@ export default function DashboardPage() {
 
             setEvents(eventsList);
             setFetching(false);
+
+            // Si es admin, calcular almacenamiento al cargar eventos
+            if (isAdmin) {
+                calculateStorageUsage(eventsList);
+            }
         }, (error) => {
             console.error("Error fetching events:", error);
             alert(`Error al cargar eventos: ${error.message}\nVerifica tus permisos en Firebase.`);
@@ -117,6 +124,45 @@ export default function DashboardPage() {
 
         return () => unsubscribe();
     }, [user]);
+
+    const calculateStorageUsage = async (eventsList: VentoEvent[]) => {
+        console.log("Calculando uso de almacenamiento...");
+        let totalSize = 0;
+
+        try {
+            for (const event of eventsList) {
+                // Fotos de invitados
+                const photosRef = ref(storage, `events/${event.id}/photos`);
+                try {
+                    const photos = await listAll(photosRef);
+                    const photoSizes = await Promise.all(photos.items.map(item => getMetadata(item).then(m => m.size)));
+                    totalSize += photoSizes.reduce((a, b) => a + b, 0);
+                } catch (e) { /* Carpeta podría no existir */ }
+
+                // Imágenes de configuración
+                const configRef = ref(storage, `events/${event.id}/config`);
+                try {
+                    const configs = await listAll(configRef);
+                    const configSizes = await Promise.all(configs.items.map(item => getMetadata(item).then(m => m.size)));
+                    totalSize += configSizes.reduce((a, b) => a + b, 0);
+                } catch (e) { /* Carpeta podría no existir */ }
+            }
+
+            // Formatear tamaño
+            let formatted = "";
+            if (totalSize < 1024 * 1024) {
+                formatted = `${(totalSize / 1024).toFixed(2)} KB`;
+            } else if (totalSize < 1024 * 1024 * 1024) {
+                formatted = `${(totalSize / (1024 * 1024)).toFixed(2)} MB`;
+            } else {
+                formatted = `${(totalSize / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+            }
+
+            setStorageStats({ totalBytes: totalSize, formatted });
+        } catch (error) {
+            console.error("Error calculando almacenamiento:", error);
+        }
+    };
 
     const handleCreateEvent = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -195,7 +241,7 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className={`grid grid-cols-1 ${user?.email?.toLowerCase().trim() === "marroquindavid635@gmail.com" ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3"} gap-6 mb-12`}>
                 {/* Stats Cards */}
                 <div className="bg-vento-card p-8 rounded-[2rem] shadow-sm border border-vento-border group hover:border-vento-primary/50 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 delay-75 fill-mode-both">
                     <h3 className="text-vento-text-muted text-[10px] font-black uppercase tracking-[0.2em] mb-3">Invitados Confirmados</h3>
@@ -211,6 +257,16 @@ export default function DashboardPage() {
                     <h3 className="text-vento-text-muted text-[10px] font-black uppercase tracking-[0.2em] mb-3">Sesiones Activas</h3>
                     <p className="text-5xl font-black text-blue-500 tabular-nums tracking-tighter">{events.length}</p>
                 </div>
+
+                {user?.email?.toLowerCase().trim() === "marroquindavid635@gmail.com" && (
+                    <div className="bg-vento-card p-8 rounded-[2rem] shadow-sm border border-vento-border group hover:border-vento-primary/50 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 delay-[450ms] fill-mode-both">
+                        <div className="flex justify-between items-start mb-3">
+                            <h3 className="text-vento-text-muted text-[10px] font-black uppercase tracking-[0.2em]">Uso Almacenamiento</h3>
+                            <Database size={14} className="text-rose-500 animate-pulse" />
+                        </div>
+                        <p className="text-5xl font-black text-rose-500 tabular-nums tracking-tighter">{storageStats.formatted}</p>
+                    </div>
+                )}
             </div>
 
             <div>
