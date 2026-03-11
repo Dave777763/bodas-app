@@ -42,7 +42,10 @@ interface Guest {
     name: string;
     group: string;
     passes: number;
+    confirmedPasses?: number;
     status: "Confirmado" | "Pendiente" | "Declinado";
+    attended?: boolean;
+    eventOwnerId?: string;
 }
 
 export default function InvitationPage({ params }: { params: Promise<{ eventId: string; guestId: string }> }) {
