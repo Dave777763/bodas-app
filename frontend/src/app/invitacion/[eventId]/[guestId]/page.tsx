@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, updateDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import {
     Calendar,
     MapPin,
@@ -112,19 +112,22 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
     }, [eventId, guestId]);
 
     const handleRSVP = async (status: "Confirmado" | "Declinado") => {
+        console.log("INVITACION_DEBUG: Iniciando RSVP", { status, selectedPasses });
         setSubmitting(true);
         try {
             const guestRef = doc(db, "events", eventId, "guests", guestId);
             await updateDoc(guestRef, {
                 status: status,
                 confirmedPasses: status === "Confirmado" ? selectedPasses : 0,
-                updatedAt: new Date()
+                updatedAt: serverTimestamp()
             });
+            console.log("INVITACION_DEBUG: Update Firestore Exitoso");
+            // No seteamos el estado local de forma agresiva, 
+            // dejamos que onSnapshot lo traiga del servidor para estar seguros
             setRsvpDone(true);
-            setGuest(prev => prev ? { ...prev, status } : null);
-        } catch (error) {
-            console.error("Error updating RSVP:", error);
-            alert("Hubo un error al guardar tu respuesta. Por favor intenta de nuevo.");
+        } catch (error: any) {
+            console.error("INVITACION_DEBUG: Error updating RSVP:", error);
+            alert(`Error al guardar: ${error.message || 'Error desconocido'}. Verifica tu conexión.`);
         } finally {
             setSubmitting(false);
         }
