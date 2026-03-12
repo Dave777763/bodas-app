@@ -65,6 +65,7 @@ interface VentoEvent {
     imageUrl?: string;
     schedule?: ScheduleItem[];
     theme?: string;
+    musicUrl?: string;
 }
 
 interface Guest {
@@ -603,6 +604,58 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                                                     <button type="submit" className="p-2 bg-vento-primary text-white rounded-xl hover:opacity-90 transition-all shadow-md"><Plus size={16} /></button>
                                                 </form>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-vento-card rounded-[2.5rem] border border-vento-border overflow-hidden shadow-xl">
+                                    <div className="p-8 border-b border-vento-border bg-vento-bg/50 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-1">Atmosphere & Sound</p>
+                                            <h3 className="text-2xl font-black font-serif italic flex items-center gap-3">
+                                                Música de Fondo
+                                            </h3>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <div className="px-3 py-1 bg-vento-bg rounded-full border border-vento-border flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-[#1DB954]"></div>
+                                                <span className="text-[8px] font-black uppercase">Spotify</span>
+                                            </div>
+                                            <div className="px-3 py-1 bg-vento-bg rounded-full border border-vento-border flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-[#FF0000]"></div>
+                                                <span className="text-[8px] font-black uppercase">YouTube Music</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-8">
+                                        <p className="text-sm text-vento-text-muted mb-6">Pegue el enlace de la canción o lista de reproducción que desea que se escuche en la invitación.</p>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-[10px] font-black uppercase tracking-widest text-vento-text-muted mb-2 ml-1">Enlace de Música</label>
+                                                <div className="flex gap-3">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="https://open.spotify.com/track/..."
+                                                        defaultValue={event.musicUrl || ""}
+                                                        onBlur={async (e) => {
+                                                            const newUrl = e.target.value;
+                                                            if (newUrl === event.musicUrl) return;
+                                                            try {
+                                                                const eventRef = doc(db, "events", eventId);
+                                                                await updateDoc(eventRef, { musicUrl: newUrl });
+                                                                // onSnapshot will update the local state
+                                                            } catch (err) {
+                                                                console.error("Error updating music URL:", err);
+                                                                alert("Error al guardar la música");
+                                                            }
+                                                        }}
+                                                        className="flex-1 px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <p className="text-[10px] text-vento-text-muted italic">
+                                                Sugerencia: Para Spotify, usa la opción de "Compartir &gt; Copiar enlace". Para YouTube Music, copia la URL del navegador.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>

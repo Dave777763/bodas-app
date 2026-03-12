@@ -19,6 +19,7 @@ import FallingPetals from "@/components/FallingPetals";
 import Countdown from "@/components/Countdown";
 import { getTheme } from "@/lib/themes";
 import CameraCapture from "@/components/CameraCapture";
+import MusicPlayer from "@/components/MusicPlayer";
 
 interface ScheduleItem {
     id: string;
@@ -35,6 +36,7 @@ interface VentoEvent {
     imageUrl?: string;
     schedule?: ScheduleItem[];
     theme?: string;
+    musicUrl?: string;
 }
 
 interface Guest {
@@ -246,6 +248,9 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
                         ¡Te invitamos!
                     </p>
                 </div>
+
+                {/* Music Player */}
+                {event.musicUrl && <MusicPlayer url={event.musicUrl} />}
 
                 {/* Countdown */}
                 <div className="w-full max-w-lg mb-8 animate-scaleIn">

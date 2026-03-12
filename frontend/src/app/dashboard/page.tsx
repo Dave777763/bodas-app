@@ -14,6 +14,8 @@ const ADMIN_EMAIL = "marroquindavid635@gmail.com";
 
 interface VentoEvent {
     id: string;
+    theme?: string;
+    musicUrl?: string;
     name: string;
     date: string;
     location: string;
