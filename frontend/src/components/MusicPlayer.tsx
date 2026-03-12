@@ -56,14 +56,18 @@ export default function MusicPlayer({ url }: MusicPlayerProps) {
 
         return (
             <div className="w-full max-w-lg mx-auto my-6 animate-fadeIn">
-                <div className="relative pt-[56.25%] rounded-3xl overflow-hidden shadow-lg border border-white/20 bg-black">
+                <div className="relative h-[80px] rounded-2xl overflow-hidden shadow-lg border border-white/20 bg-black group">
                     <iframe
-                        src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
-                        className="absolute inset-0 w-full h-full"
+                        src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autohide=1&showinfo=0&controls=1`}
+                        className="absolute top-[-40px] left-0 w-full h-[160px]"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                         title="Music Player"
                     ></iframe>
+                    {/* Overlay to block clicking the top part of the video and keep it focused on controls */}
+                    <div className="absolute top-0 left-0 w-full h-[40px] bg-black/40 pointer-events-none flex items-center px-4">
+                        <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">YouTube Music Mode</span>
+                    </div>
                 </div>
             </div>
         );
