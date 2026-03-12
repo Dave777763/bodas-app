@@ -201,6 +201,26 @@ export const themes: Theme[] = [
         },
         style: 'modern',
     },
+    {
+        id: 'golden-heritage',
+        name: 'Heritage Dorado',
+        description: 'Sofisticado y eterno con blanco y oro',
+        colors: {
+            primary: '#d4af37',
+            primaryLight: '#faf5e6',
+            primaryDark: '#a68a2d',
+            accent: '#333333',
+            background: '#fdfdfd',
+            text: '#1a1a1a',
+            textLight: '#4a4a4a',
+        },
+        fonts: {
+            heading: 'Great Vibes',
+            body: 'Montserrat',
+            accent: 'Cormorant Garamond',
+        },
+        style: 'elegant',
+    },
 ];
 
 export const getTheme = (themeId: string): Theme => {
