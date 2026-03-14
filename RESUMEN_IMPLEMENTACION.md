@@ -314,5 +314,5 @@ Has transformado tu aplicación de invitaciones de:
 
 ---
 
-**Última actualización**: $(Get-Date -Format "yyyy-MM-dd HH:mm")
+**Última actualización**: 2026-03-14 15:48
 **Versión del proyecto**: 2.0 - Temas y Animaciones
