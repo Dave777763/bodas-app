@@ -12,17 +12,8 @@ import { Sun, Moon, Terminal, Database } from "lucide-react";
 
 const ADMIN_EMAIL = "marroquindavid635@gmail.com";
 
-interface VentoEvent {
-    id: string;
-    theme?: string;
-    musicUrl?: string;
-    name: string;
-    date: string;
-    location: string;
-    mapUrl?: string;
-    imageUrl?: string;
-    createdAt?: unknown;
-}
+import { VentoEvent } from "@/lib/types";
+import NewEventModal from "@/components/NewEventModal";
 
 export default function DashboardPage() {
     const { user } = useAuth();
@@ -34,12 +25,6 @@ export default function DashboardPage() {
     const [events, setEvents] = useState<VentoEvent[]>([]);
     const [globalStats, setGlobalStats] = useState({ confirmados: 0, pendientes: 0 });
     const [storageStats, setStorageStats] = useState<{ totalBytes: number; formatted: string }>({ totalBytes: 0, formatted: "0 MB" });
-    const [formData, setFormData] = useState({
-        name: "",
-        date: "",
-        location: "",
-        mapUrl: ""
-    });
     const [searchTerm, setSearchTerm] = useState("");
 
     // Escuchar invitados de TODOS los eventos del usuario (collectionGroup)
@@ -166,44 +151,7 @@ export default function DashboardPage() {
         }
     };
 
-    const handleCreateEvent = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        const normalizedEmail = (user?.email || "").toLowerCase().trim();
-        console.log("Iniciando guardado de evento...", { ...formData, ownerEmail: normalizedEmail });
-
-        try {
-            const docRef = await addDoc(collection(db, "events"), {
-                ...formData,
-                userId: user?.uid,
-                ownerEmail: normalizedEmail,
-                createdAt: serverTimestamp(),
-            });
-            console.log("Evento guardado con ID:", docRef.id);
-
-            setFormData({ name: "", date: "", location: "", mapUrl: "" });
-            setIsModalOpen(false);
-            console.log("¡Evento guardado con éxito!");
-        } catch (error: any) {
-            console.error("Error original de Firebase:", error);
-            
-            let message = "Error al guardar. ";
-            if (error.code === 'permission-denied') {
-                message += "No tienes permisos para escribir en la base de datos. Verifica que tu cuenta sea la correcta.";
-            } else {
-                message += error.message || "Revisa la consola.";
-            }
-            
-            alert(message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
+    // Event creation is now handled inside NewEventModal
 
     return (
         <div className="p-8 min-h-screen bg-vento-bg text-vento-text transition-colors duration-500">
@@ -375,103 +323,12 @@ export default function DashboardPage() {
                 )}
             </div>
 
-            {/* Modal de Creación de Evento */}
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-md">
-                    <div className="bg-vento-card rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-300">
-                        <div className="p-8 border-b border-vento-border flex justify-between items-center bg-vento-bg/50">
-                            <h3 className="text-2xl font-black italic tracking-tighter">VENTO <span className="text-vento-primary text-sm not-italic font-bold ml-2">NUEVO EVENTO</span></h3>
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="text-vento-text-muted hover:text-vento-primary p-2 rounded-full hover:bg-vento-bg transition-colors"
-                            >
-                                <X size={24} />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleCreateEvent} className="p-8 space-y-5">
-                            <div>
-                                <label className="block text-xs font-black uppercase tracking-widest text-vento-text-muted mb-2 ml-1">¿Qué celebramos?</label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    placeholder="Ej. Gala Anual o Fiesta de David"
-                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text placeholder-vento-text-muted/50 focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium"
-                                    required
-                                    disabled={loading}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-black uppercase tracking-widest text-vento-text-muted mb-2 ml-1">¿Cuándo?</label>
-                                <input
-                                    type="date"
-                                    name="date"
-                                    value={formData.date}
-                                    onChange={handleChange}
-                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium"
-                                    required
-                                    disabled={loading}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-black uppercase tracking-widest text-vento-text-muted mb-2 ml-1">¿Dónde?</label>
-                                <input
-                                    type="text"
-                                    name="location"
-                                    value={formData.location}
-                                    onChange={handleChange}
-                                    placeholder="Nombre del lugar"
-                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text placeholder-vento-text-muted/50 focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium"
-                                    required
-                                    disabled={loading}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-black uppercase tracking-widest text-vento-text-muted mb-2 ml-1">Enlace de Maps (Opcional)</label>
-                                <input
-                                    type="url"
-                                    name="mapUrl"
-                                    value={formData.mapUrl}
-                                    onChange={handleChange}
-                                    placeholder="https://maps.app.goo.gl/..."
-                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text placeholder-vento-text-muted/50 focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium"
-                                    disabled={loading}
-                                />
-                            </div>
-
-                            <div className="pt-4 flex justify-end gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="px-6 py-3 text-vento-text-muted hover:bg-vento-bg rounded-2xl transition-colors font-bold"
-                                    disabled={loading}
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="px-8 py-3 bg-vento-primary text-white rounded-2xl hover:opacity-90 transition-all font-bold shadow-xl shadow-vento-primary/20 disabled:opacity-50 flex items-center gap-2"
-                                >
-                                    {loading ? (
-                                        <>
-                                            <Loader2 size={18} className="animate-spin" />
-                                            Guardando
-                                        </>
-                                    ) : (
-                                        "Crear Evento"
-                                    )}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <NewEventModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                userId={user?.uid}
+                ownerEmail={user?.email || ""}
+            />
         </div>
     );
 }
