@@ -11,7 +11,9 @@ import {
     Heart 
 } from "lucide-react";
 import QRCode from "react-qr-code";
+import MusicPlayer from "@/components/MusicPlayer";
 import CameraCapture from "@/components/CameraCapture";
+import RSVPSection from "@/components/RSVPSection";
 import { getTheme } from "@/lib/themes";
 import { VentoEvent } from "@/lib/types";
 
@@ -180,81 +182,20 @@ export default function InvitationPage({ params }: { params: Promise<{ eventId: 
                 <HTMLLayout event={event} guest={guest} theme={theme} rsvpDone={rsvpDone} onOpenRSVP={() => setIsRSVPModalOpen(true)} />
             )}
 
-            {/* 6. RSVP Section */}
-            <section className="py-28 px-4 w-full flex flex-col items-center text-center">
-                {!rsvpDone ? (
-                    <div className="animate-pulseIn">
-                        <h2 
-                            className="text-4xl md:text-5xl mb-6"
-                            style={{ color: theme.colors.primary, fontFamily: theme.fonts.heading }}
-                        >
-                            ¿Nos acompañas?
-                        </h2>
-                        <p className="text-stone-500 mb-10 max-w-sm">
-                            Tu presencia será el mejor regalo que podamos recibir este día.
-                        </p>
-                        <button 
-                            onClick={() => setIsRSVPModalOpen(true)}
-                            className="px-12 py-5 rounded-full text-lg font-bold text-white shadow-2xl hover:scale-105 transition-all shadow-primary/40 active:scale-95"
-                            style={{ backgroundColor: theme.colors.primary }}
-                        >
-                            Confirmar Asistencia
-                        </button>
-                    </div>
-                ) : (
-                    <div className="w-full max-w-lg space-y-12 animate-fadeIn">
-                        <div className="p-10 bg-white rounded-[2rem] shadow-2xl border border-stone-50">
-                            <div className="inline-block p-4 rounded-full bg-emerald-50 text-emerald-500 mb-6">
-                                {guest.status === "Confirmado" ? <CheckCircle2 size={48} /> : <XCircle size={48} />}
-                            </div>
-                            <h3 className="text-3xl font-bold mb-4">
-                                {guest.status === "Confirmado" ? "¡Gracias por confirmar!" : "Sentimos que no puedas ir"}
-                            </h3>
-                            <p className="text-stone-500 mb-8">
-                                {guest.status === "Confirmado"
-                                    ? `Hemos registrado ${selectedPasses} pases para tu lugar. ${hasCompanion ? `¡Qué gusto que vengas con ${companionName}!` : ''} ¡Nos vemos pronto!`
-                                    : "Gracias por avisarnos, se te extrañará."}
-                            </p>
-
-                            {guest.status === "Confirmado" && (
-                                <div className="mt-8 p-6 bg-stone-50 rounded-2xl border-2 border-dashed border-stone-200 flex flex-col items-center">
-                                    <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-6">Tu Pase de Entrada</p>
-                                    <div className="p-4 bg-white rounded-xl shadow-md">
-                                        <QRCode
-                                            value={JSON.stringify({ eventId, guestId })}
-                                            size={160}
-                                            style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                                            viewBox={`0 0 160 160`}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-stone-400 mt-4 italic">Muestra este código en la entrada</p>
-                                </div>
-                            )}
-
-                            <div className="mt-10">
-                                <button
-                                    onClick={() => handleRSVP("Pendiente")}
-                                    disabled={submitting}
-                                    className="text-stone-400 text-sm font-medium hover:text-primary transition underline underline-offset-4 disabled:opacity-50"
-                                >
-                                    {submitting ? "PROCESANDO..." : "Cambiar mi respuesta"}
-                                </button>
-                            </div>
-                        </div>
-
-                        {guest.status === "Confirmado" && (
-                            <div className="w-full">
-                                <CameraCapture
-                                    eventId={eventId}
-                                    guestId={guestId}
-                                    guestName={guest.name}
-                                    theme={theme}
-                                />
-                            </div>
-                        )}
-                    </div>
-                )}
-            </section>
+            {/* Homologated RSVP Section */}
+            <RSVPSection 
+                rsvpDone={rsvpDone}
+                guest={guest}
+                theme={theme}
+                onOpenRSVP={() => setIsRSVPModalOpen(true)}
+                onResetRSVP={() => handleRSVP("Pendiente")}
+                submitting={submitting}
+                eventId={eventId}
+                guestId={guestId}
+                selectedPasses={selectedPasses}
+                hasCompanion={hasCompanion}
+                companionName={companionName}
+            />
 
             {/* Modal RSVP */}
             {isRSVPModalOpen && (

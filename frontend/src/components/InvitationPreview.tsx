@@ -1,5 +1,6 @@
 "use client";
 
+import RSVPSection from "./RSVPSection";
 import React from "react";
 import { X, Heart, CheckCircle2 } from "lucide-react";
 import { HTMLLayout, TicketLayout } from "./InvitationLayout";
@@ -22,8 +23,10 @@ export default function InvitationPreview({ isOpen, onClose, event }: Invitation
         id: "preview-id",
         name: "Invitado de Prueba",
         passes: 2,
-        status: "Pendiente" as const,
-        hasCompanion: false,
+        status: "Confirmado" as const, // Changed to show how it looks confirmed too
+        hasCompanion: true,
+        companionName: "Acompañante de Prueba",
+        confirmedPasses: 2
     };
 
     return (
@@ -70,33 +73,15 @@ export default function InvitationPreview({ isOpen, onClose, event }: Invitation
                     />
                 )}
 
-                {/* Shared Preview RSVP Section */}
-                <section className="py-28 px-4 w-full flex flex-col items-center text-center bg-stone-50 border-t border-stone-100">
-                    <div className="animate-pulseIn">
-                        <h2 
-                            className="text-4xl md:text-5xl mb-6"
-                            style={{ color: theme.colors.primary, fontFamily: theme.fonts.heading }}
-                        >
-                            ¿Nos acompañas?
-                        </h2>
-                        <p className="text-stone-500 mb-10 max-w-sm mx-auto">
-                            Tu presencia será el mejor regalo que podamos recibir este día.
-                        </p>
-                        <button 
-                            className="px-12 py-5 rounded-full text-lg font-bold text-white shadow-2xl hover:scale-105 transition-all shadow-primary/40"
-                            style={{ backgroundColor: theme.colors.primary }}
-                            onClick={() => alert("RSVP is disabled in preview mode")}
-                        >
-                            Confirmar Asistencia
-                        </button>
-                    </div>
-
-                    <div className="mt-16 text-[10px] font-black uppercase tracking-[0.3em] text-stone-300 flex items-center gap-3">
-                        <div className="w-12 h-px bg-stone-200"></div>
-                        Fin de la Invitación
-                        <div className="w-12 h-px bg-stone-200"></div>
-                    </div>
-                </section>
+                {/* Homologated RSVP Section */}
+                <RSVPSection 
+                    rsvpDone={false} // Switch to true if you want to preview the "Thanks" state
+                    guest={previewGuest}
+                    theme={theme}
+                    onOpenRSVP={() => alert("RSVP is disabled in preview mode")}
+                    onResetRSVP={() => alert("Reset is disabled in preview mode")}
+                    isPreview={true}
+                />
 
                 <footer className="py-20 text-center w-full px-4 border-t border-stone-100 bg-white">
                     <p className="flex items-center justify-center gap-2 text-stone-300 text-sm">

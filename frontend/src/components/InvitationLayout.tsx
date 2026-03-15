@@ -75,20 +75,6 @@ export function HTMLLayout({ event, guest, theme, rsvpDone, onOpenRSVP, isPrevie
                 </div>
             </header>
 
-            {event.photoUrl && (
-                <section className="py-24 px-4 w-full flex flex-col items-center animate-fadeIn">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-vento-primary/10 blur-[100px] rounded-full" />
-                        <div className="relative w-56 h-56 md:w-80 md:h-80 rounded-full border-[12px] border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] overflow-hidden z-10">
-                            <img src={event.photoUrl} alt="Evento" className="w-full h-full object-cover" />
-                        </div>
-                    </div>
-                    <div className="mt-12 text-center max-w-lg">
-                        <p className="text-vento-text-muted italic font-serif text-lg">"En el amor no hay distancias, porque siempre estaremos juntos."</p>
-                    </div>
-                </section>
-            )}
-
             <section className="py-20 px-4 w-full max-w-4xl text-center mx-auto">
                 <div className="mb-20">
                     <Countdown
@@ -110,6 +96,20 @@ export function HTMLLayout({ event, guest, theme, rsvpDone, onOpenRSVP, isPrevie
                     />
                 </div>
             </section>
+
+            {event.photoUrl && (
+                <section className="py-24 px-4 w-full flex flex-col items-center animate-fadeIn">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-vento-primary/10 blur-[100px] rounded-full" />
+                        <div className="relative w-56 h-56 md:w-80 md:h-80 rounded-full border-[12px] border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] overflow-hidden z-10">
+                            <img src={event.photoUrl} alt="Evento" className="w-full h-full object-cover" />
+                        </div>
+                    </div>
+                    <div className="mt-12 text-center max-w-lg">
+                        <p className="text-vento-text-muted italic font-serif text-lg">"En el amor no hay distancias, porque siempre estaremos juntos."</p>
+                    </div>
+                </section>
+            )}
 
             <section className="py-20 px-4 w-full bg-stone-50/50">
                 <div className="max-w-4xl mx-auto flex flex-col items-center">
