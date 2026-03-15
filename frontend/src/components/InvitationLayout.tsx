@@ -40,39 +40,57 @@ export function HTMLLayout({ event, guest, theme, rsvpDone, onOpenRSVP, isPrevie
         <>
             <FallingPetals color={theme.colors.primaryLight} count={25} />
             
-            <header className="relative w-full h-screen flex flex-col items-center justify-center text-center px-4 overflow-hidden">
+            <header className="relative w-full min-h-screen flex flex-col items-center justify-center text-center px-4 overflow-hidden bg-stone-900">
                 <div 
                     className="absolute inset-0 bg-cover bg-center z-0 transition-transform duration-1000 transform hover:scale-105"
                     style={{ 
-                        backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${event.coverImageUrl || 'https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'})`,
+                        backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url(${event.coverImageUrl || 'https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'})`,
                     }}
                 />
                 
                 <div className="relative z-10 animate-fadeInUp">
-                    <h1 
-                        className="text-6xl md:text-8xl mb-4 text-white drop-shadow-lg"
-                        style={{ fontFamily: theme.fonts.heading }}
-                    >
-                        {event.name || "Nombre del Evento"}
-                    </h1>
-                    <p className="text-xl md:text-2xl text-white/90 uppercase tracking-widest font-light mb-2">
+                    <p className="text-xl md:text-2xl text-white/90 uppercase tracking-[0.4em] font-light mb-6">
                         Nuestra Boda
                     </p>
-                    <div className="w-16 h-px bg-white/50 mx-auto my-6"></div>
-                    <p className="text-2xl md:text-3xl text-white font-medium">
-                        {event.date || "Fecha del Evento"}
+                    <h1 
+                        className="text-7xl md:text-9xl mb-8 text-white drop-shadow-2xl"
+                        style={{ fontFamily: theme.fonts.heading }}
+                    >
+                        {event.name || "Invitación Especial"}
+                    </h1>
+                    <div className="w-24 h-px bg-white/50 mx-auto my-8"></div>
+                    <p className="text-2xl md:text-4xl text-white font-serif italic">
+                        {event.date || "Próximamente"}
                     </p>
                 </div>
 
                 {event.musicUrl && !isPreview && (
-                    <div className="absolute top-6 right-6 z-20">
+                    <div className="absolute top-10 right-10 z-20">
                         <MusicPlayer url={event.musicUrl} />
                     </div>
                 )}
+                
+                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 animate-bounce text-white/50">
+                    <div className="w-px h-12 bg-gradient-to-b from-white to-transparent mx-auto"></div>
+                </div>
             </header>
 
-            <section className="py-20 px-4 w-full max-w-4xl text-center">
-                <div className="mb-16">
+            {event.photoUrl && (
+                <section className="py-24 px-4 w-full flex flex-col items-center animate-fadeIn">
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-vento-primary/10 blur-[100px] rounded-full" />
+                        <div className="relative w-56 h-56 md:w-80 md:h-80 rounded-full border-[12px] border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] overflow-hidden z-10">
+                            <img src={event.photoUrl} alt="Evento" className="w-full h-full object-cover" />
+                        </div>
+                    </div>
+                    <div className="mt-12 text-center max-w-lg">
+                        <p className="text-vento-text-muted italic font-serif text-lg">"En el amor no hay distancias, porque siempre estaremos juntos."</p>
+                    </div>
+                </section>
+            )}
+
+            <section className="py-20 px-4 w-full max-w-4xl text-center mx-auto">
+                <div className="mb-20">
                     <Countdown
                         targetDate={event.date}
                         type={event.countdownType}
@@ -84,7 +102,7 @@ export function HTMLLayout({ event, guest, theme, rsvpDone, onOpenRSVP, isPrevie
                     />
                 </div>
                 
-                <div className="w-full aspect-[16/9] md:aspect-[21/9] rounded-[2rem] overflow-hidden shadow-2xl shadow-primary/10">
+                <div className="w-full aspect-[16/9] md:aspect-[21/9] rounded-[3rem] overflow-hidden shadow-[0_48px_96px_-24px_rgba(0,0,0,0.15)] border-8 border-white">
                     <img 
                         src={event.countdownImageUrl || 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'} 
                         alt="Countdown" 
@@ -92,17 +110,6 @@ export function HTMLLayout({ event, guest, theme, rsvpDone, onOpenRSVP, isPrevie
                     />
                 </div>
             </section>
-
-            {event.photoUrl && (
-                <section className="py-20 px-4 w-full flex flex-col items-center animate-onScroll">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-vento-primary/20 blur-3xl rounded-full" />
-                        <div className="relative w-48 h-48 md:w-64 md:h-64 rounded-full border-8 border-white shadow-2xl overflow-hidden z-10">
-                            <img src={event.photoUrl} alt="Evento" className="w-full h-full object-cover" />
-                        </div>
-                    </div>
-                </section>
-            )}
 
             <section className="py-20 px-4 w-full bg-stone-50/50">
                 <div className="max-w-4xl mx-auto flex flex-col items-center">
