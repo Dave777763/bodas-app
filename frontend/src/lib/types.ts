@@ -25,6 +25,7 @@ export interface VentoEvent {
     itinerary: ItineraryMoment[];
     dressCode: DressCode;
     theme?: string;
+    imageUrl?: string;
     rsvpEnabled: boolean;
     requireCompanionName?: boolean; // Solo aplica en mas de un pase
     qrCodeEnabled: boolean;

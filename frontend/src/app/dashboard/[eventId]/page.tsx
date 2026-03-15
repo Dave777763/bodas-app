@@ -15,6 +15,8 @@ import {
     CheckCircle2,
     Clock,
     XCircle,
+    X,
+    Eye,
     Copy,
     Share2,
     QrCode,
@@ -43,10 +45,15 @@ import {
 } from "firebase/firestore";
 import ThemeSelector from "@/components/ThemeSelector";
 
-import { getTheme } from "@/lib/themes";
+import { getTheme, themes } from "@/lib/themes";
 import InvitationGenerator from "@/components/InvitationGenerator";
 import PhotoGallery from "@/components/PhotoGallery";
-import MainImageUpload from "@/components/MainImageUpload";
+import EventImageUpload from "@/components/EventImageUpload";
+import InvitationPreview from "@/components/InvitationPreview";
+import { VentoEvent, VentoEventType, CountdownType, DressCode } from "@/lib/types";
+
+import Toggle from "@/components/Toggle"; // Assuming I might need to create it or just use an inline one. 
+// Wait, NewEventModal had an inline Toggle. I'll use a similar one here or define it locally.
 
 const ADMIN_EMAIL = "marroquindavid635@gmail.com";
 
@@ -57,18 +64,7 @@ interface ScheduleItem {
     activity: string;
 }
 
-interface VentoEvent {
-    id: string; // Se mantiene como requerido para el resto del código
-    name: string;
-    date: string;
-    location: string;
-    userId?: string;
-    ownerEmail?: string;
-    imageUrl?: string;
-    schedule?: ScheduleItem[];
-    theme?: string;
-    musicUrl?: string;
-}
+// Using VentoEvent from types.ts
 
 interface Guest {
     id: string;
@@ -93,6 +89,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     const [guests, setGuests] = useState<Guest[]>([]);
     const [isAddGuestModalOpen, setIsAddGuestModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
     // Formulario de invitado
     const [guestForm, setGuestForm] = useState({
@@ -537,25 +534,200 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
                 {activeTab === "config" && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+                        {/* Header Actions */}
+                        <div className="flex justify-end gap-4">
+                            <button
+                                onClick={() => setIsPreviewOpen(true)}
+                                className="px-8 py-3.5 bg-white text-vento-primary border border-vento-primary/20 rounded-2xl hover:bg-vento-primary hover:text-white transition-all font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-xl"
+                            >
+                                <Eye size={18} /> Ver Invitación Preview
+                            </button>
+                        </div>
+
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             <div className="lg:col-span-2 space-y-8">
+                                {/* Basic Info */}
                                 <div className="bg-vento-card rounded-[2.5rem] border border-vento-border overflow-hidden shadow-xl">
                                     <div className="p-8 border-b border-vento-border bg-vento-bg/50">
-                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-1">Visual Settings</p>
-                                        <h3 className="text-2xl font-black font-serif italic">Temas de la Invitación</h3>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-1">General Info</p>
+                                        <h3 className="text-2xl font-black font-serif italic">Información del Evento</h3>
                                     </div>
-                                    <div className="p-8">
-                                        <ThemeSelector eventId={eventId} currentTheme={event.theme || 'romantic-rose'} />
+                                    <div className="p-8 space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-vento-text-muted ml-1">Nombre del Evento</label>
+                                                <input 
+                                                    type="text" 
+                                                    defaultValue={event.name}
+                                                    onBlur={(e) => updateDoc(doc(db, "events", eventId), { name: e.target.value })}
+                                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-bold"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-vento-text-muted ml-1">Fecha</label>
+                                                <input 
+                                                    type="text" 
+                                                    defaultValue={event.date}
+                                                    onBlur={(e) => updateDoc(doc(db, "events", eventId), { date: e.target.value })}
+                                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-bold"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-vento-text-muted ml-1">Lugar</label>
+                                            <input 
+                                                type="text" 
+                                                defaultValue={event.location}
+                                                onBlur={(e) => updateDoc(doc(db, "events", eventId), { location: e.target.value })}
+                                                className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-bold"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-vento-text-muted ml-1">URL Google Maps</label>
+                                                <input 
+                                                    type="text" 
+                                                    defaultValue={event.mapUrl || ""}
+                                                    onBlur={(e) => updateDoc(doc(db, "events", eventId), { mapUrl: e.target.value })}
+                                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium text-sm"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-vento-text-muted ml-1">URL Página del Salón</label>
+                                                <input 
+                                                    type="text" 
+                                                    defaultValue={event.venuePageUrl || ""}
+                                                    onBlur={(e) => updateDoc(doc(db, "events", eventId), { venuePageUrl: e.target.value })}
+                                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium text-sm"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
+                                {/* Style Settings */}
                                 <div className="bg-vento-card rounded-[2.5rem] border border-vento-border overflow-hidden shadow-xl">
                                     <div className="p-8 border-b border-vento-border bg-vento-bg/50">
-                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-1">Invitation Media</p>
-                                        <h3 className="text-2xl font-black font-serif italic text-vento-text">Imagen de Portada</h3>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-1">Invitation Style</p>
+                                        <h3 className="text-2xl font-black font-serif italic">Estilo & Visuales</h3>
                                     </div>
-                                    <div className="p-8">
-                                        <MainImageUpload eventId={eventId} currentImageUrl={event.imageUrl} />
+                                    <div className="p-8 space-y-8">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-vento-text-muted ml-1">Tipo de Invitación</label>
+                                                <select 
+                                                    value={event.type}
+                                                    onChange={(e) => updateDoc(doc(db, "events", eventId), { type: e.target.value })}
+                                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-bold appearance-none"
+                                                >
+                                                    <option value="HTML">Diseño Digital (Full Page)</option>
+                                                    <option value="Ticket">Diseño Ticket (Moderno)</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-vento-text-muted ml-1">Cuenta Regresiva</label>
+                                                <select 
+                                                    value={event.countdownType}
+                                                    onChange={(e) => updateDoc(doc(db, "events", eventId), { countdownType: e.target.value })}
+                                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-bold appearance-none"
+                                                >
+                                                    <option value="Digital">Digital (Números)</option>
+                                                    <option value="Analog">Analógica (Reloj)</option>
+                                                    <option value="ProgressBar">Barra de Progreso</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-vento-text-muted ml-1">Código de Vestimenta</label>
+                                                <select 
+                                                    value={event.dressCode}
+                                                    onChange={(e) => updateDoc(doc(db, "events", eventId), { dressCode: e.target.value })}
+                                                    className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-bold appearance-none"
+                                                >
+                                                    <option value="Formal">Formal</option>
+                                                    <option value="Etiqueta">Etiqueta</option>
+                                                    <option value="Cóctel">Cóctel</option>
+                                                    <option value="Semiformal">Semiformal</option>
+                                                    <option value="Casual">Casual</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="space-y-4">
+                                            <h4 className="text-xs font-black uppercase tracking-widest text-vento-text-muted border-b border-vento-border pb-2">Tema Visual</h4>
+                                            <ThemeSelector eventId={eventId} currentTheme={event.theme || 'romantic-rose'} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Media Management */}
+                                <div className="bg-vento-card rounded-[2.5rem] border border-vento-border overflow-hidden shadow-xl">
+                                    <div className="p-8 border-b border-vento-border bg-vento-bg/50">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-1">Media Assets</p>
+                                        <h3 className="text-2xl font-black font-serif italic text-vento-text">Galería & Portadas</h3>
+                                    </div>
+                                    <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <EventImageUpload 
+                                            eventId={eventId} 
+                                            field="imageUrl" 
+                                            label="Imagen Principal (Dashboard)" 
+                                            currentImageUrl={event.imageUrl} 
+                                        />
+                                        <EventImageUpload 
+                                            eventId={eventId} 
+                                            field="coverImageUrl" 
+                                            label="Imagen de Portada (HTML)" 
+                                            currentImageUrl={event.coverImageUrl} 
+                                        />
+                                        <EventImageUpload 
+                                            eventId={eventId} 
+                                            field="countdownImageUrl" 
+                                            label="Imagen Cuenta Regresiva" 
+                                            currentImageUrl={event.countdownImageUrl} 
+                                        />
+                                        <EventImageUpload 
+                                            eventId={eventId} 
+                                            field="venueImageUrl" 
+                                            label="Imagen del Lugar" 
+                                            currentImageUrl={event.venueImageUrl} 
+                                        />
+                                        <EventImageUpload 
+                                            eventId={eventId} 
+                                            field="photoUrl" 
+                                            label="Foto de Perfil/Evento" 
+                                            currentImageUrl={event.photoUrl} 
+                                            aspectRatio="square"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* RSVP & Advanced Settings */}
+                                <div className="bg-vento-card rounded-[2.5rem] border border-vento-border overflow-hidden shadow-xl">
+                                    <div className="p-8 border-b border-vento-border bg-vento-bg/50">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-1">RSVP & Access</p>
+                                        <h3 className="text-2xl font-black font-serif italic">Confirmación & Accesos</h3>
+                                    </div>
+                                    <div className="p-8 space-y-6">
+                                        <div className="flex items-center justify-between p-6 bg-vento-bg/50 rounded-3xl border border-vento-border">
+                                            <div>
+                                                <h5 className="font-black italic mb-1 text-sm text-vento-text">Habilitar Confirmaciones (RSVP)</h5>
+                                                <p className="text-[10px] text-vento-text-muted uppercase font-bold tracking-wider">Permite que los invitados confirmen su asistencia.</p>
+                                            </div>
+                                            <Toggle checked={event.rsvpEnabled} onChange={(v) => updateDoc(doc(db, "events", eventId), { rsvpEnabled: v })} />
+                                        </div>
+                                        <div className="flex items-center justify-between p-6 bg-vento-bg/50 rounded-3xl border border-vento-border">
+                                            <div>
+                                                <h5 className="font-black italic mb-1 text-sm text-vento-text">Requerir Nombre de Acompañante</h5>
+                                                <p className="text-[10px] text-vento-text-muted uppercase font-bold tracking-wider">Obligatorio para invitados con más de 1 pase.</p>
+                                            </div>
+                                            <Toggle checked={event.requireCompanionName || false} onChange={(v) => updateDoc(doc(db, "events", eventId), { requireCompanionName: v })} />
+                                        </div>
+                                        <div className="flex items-center justify-between p-6 bg-vento-bg/50 rounded-3xl border border-vento-border">
+                                            <div>
+                                                <h5 className="font-black italic mb-1 text-sm text-vento-text">Códigos QR de Acceso</h5>
+                                                <p className="text-[10px] text-vento-text-muted uppercase font-bold tracking-wider">Generar QR para el Check-in en el evento.</p>
+                                            </div>
+                                            <Toggle checked={event.qrCodeEnabled} onChange={(v) => updateDoc(doc(db, "events", eventId), { qrCodeEnabled: v })} />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -563,57 +735,48 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                                     <div className="p-8 border-b border-vento-border bg-vento-bg/50">
                                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-vento-primary mb-1">Timing & Details</p>
                                         <h3 className="text-2xl font-black font-serif italic flex items-center gap-3">
-                                            <Clock className="text-vento-primary" size={24} /> Información & Cronograma
+                                            <Clock className="text-vento-primary" size={24} /> Cronograma de Actividades
                                         </h3>
                                     </div>
-                                    <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="p-8">
                                         <div className="space-y-6">
-                                            <h4 className="text-xs font-black uppercase tracking-widest text-vento-text-muted">Datos de Referencia</h4>
-                                            <div className="space-y-4">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="p-3 bg-vento-bg text-vento-primary rounded-2xl border border-vento-border shadow-sm">
-                                                        <Calendar size={20} />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-black text-vento-text-muted uppercase tracking-widest">Fecha</p>
-                                                        <p className="font-bold text-vento-text">{event.date}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="p-3 bg-vento-bg text-vento-primary rounded-2xl border border-vento-border shadow-sm">
-                                                        <MapPin size={20} />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-black text-vento-text-muted uppercase tracking-widest">Lugar</p>
-                                                        <p className="font-bold text-vento-text">{event.location}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-6">
-                                            <h4 className="text-xs font-black uppercase tracking-widest text-vento-text-muted">Actividades</h4>
                                             <div className="space-y-3">
-                                                {event.schedule && event.schedule.length > 0 ? (
-                                                    event.schedule.sort((a, b) => a.time.localeCompare(b.time)).map((item) => (
-                                                        <div key={item.id} className="flex items-center gap-4 p-3 bg-vento-bg/30 border border-vento-border rounded-2xl group transition-all hover:bg-vento-bg self-start">
-                                                            <span className="text-xs font-black text-vento-primary bg-vento-card px-2 py-1 rounded-lg border border-vento-border">
+                                                {event.itinerary && event.itinerary.length > 0 ? (
+                                                    event.itinerary.sort((a, b) => a.time.localeCompare(b.time)).map((item, idx) => (
+                                                        <div key={idx} className="flex items-center gap-4 p-4 bg-vento-bg/30 border border-vento-border rounded-2xl group transition-all hover:bg-vento-bg">
+                                                            <span className="text-xs font-black text-vento-primary bg-vento-card px-3 py-1 rounded-lg border border-vento-border">
                                                                 {item.time}
                                                             </span>
-                                                            <span className="flex-1 text-sm font-bold text-vento-text">{item.activity}</span>
-                                                            <button onClick={() => handleDeleteScheduleItem(item.id)} className="text-vento-text-muted hover:text-vento-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <XCircle size={16} />
+                                                            <span className="flex-1 text-sm font-bold text-vento-text">{item.title}</span>
+                                                            <button 
+                                                                onClick={async () => {
+                                                                    const newItinerary = event.itinerary.filter((_, i) => i !== idx);
+                                                                    await updateDoc(doc(db, "events", eventId), { itinerary: newItinerary });
+                                                                }} 
+                                                                className="text-vento-text-muted hover:text-vento-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            >
+                                                                <XCircle size={18} />
                                                             </button>
                                                         </div>
                                                     ))
                                                 ) : (
-                                                    <p className="text-vento-text-muted text-xs italic py-4">No hay actividades definidas.</p>
+                                                    <p className="text-vento-text-muted text-xs italic py-4">No hay actividades definidas en el cronograma.</p>
                                                 )}
-                                                <form onSubmit={handleAddScheduleItem} className="flex gap-2 pt-4">
-                                                    <input type="time" required value={scheduleForm.time} onChange={e => setScheduleForm({ ...scheduleForm, time: e.target.value })} className="bg-vento-bg border border-vento-border rounded-xl px-2 py-2 text-xs text-vento-text focus:ring-2 focus:ring-vento-primary/20 w-24" />
-                                                    <input type="text" required placeholder="Ceremonia..." value={scheduleForm.activity} onChange={e => setScheduleForm({ ...scheduleForm, activity: e.target.value })} className="bg-vento-bg border border-vento-border rounded-xl px-3 py-2 text-xs text-vento-text focus:ring-2 focus:ring-vento-primary/20 flex-1" />
-                                                    <button type="submit" className="p-2 bg-vento-primary text-white rounded-xl hover:opacity-90 transition-all shadow-md"><Plus size={16} /></button>
-                                                </form>
+                                                <div className="pt-4 flex gap-3">
+                                                   <button 
+                                                        onClick={() => {
+                                                            const time = prompt("Hora (HH:MM):", "20:00");
+                                                            const title = prompt("Actividad:", "Banquete");
+                                                            if (time && title) {
+                                                                const newItinerary = [...(event.itinerary || []), { time, title }];
+                                                                updateDoc(doc(db, "events", eventId), { itinerary: newItinerary });
+                                                            }
+                                                        }}
+                                                        className="px-6 py-2 bg-vento-bg border border-vento-border rounded-xl text-vento-primary text-[10px] font-black uppercase tracking-widest hover:bg-vento-primary hover:text-white transition-all"
+                                                   >
+                                                       <Plus size={14} className="inline mr-2" /> Agregar al Cronograma
+                                                   </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -654,19 +817,14 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                                                             try {
                                                                 const eventRef = doc(db, "events", eventId);
                                                                 await updateDoc(eventRef, { musicUrl: newUrl });
-                                                                // onSnapshot will update the local state
                                                             } catch (err) {
                                                                 console.error("Error updating music URL:", err);
-                                                                alert("Error al guardar la música");
                                                             }
                                                         }}
                                                         className="flex-1 px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium text-sm"
                                                     />
                                                 </div>
                                             </div>
-                                            <p className="text-[10px] text-vento-text-muted italic">
-                                                Sugerencia: Para Spotify, usa la opción de "Compartir &gt; Copiar enlace". Para YouTube Music, copia la URL del navegador.
-                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -705,8 +863,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                                         </div>
                                     </div>
                                     <div className="p-6">
-                                        <button onClick={() => window.open(`/invitacion/${eventId}/preview`, '_blank')} className="w-full py-3 bg-vento-bg text-vento-primary border border-vento-primary/20 rounded-2xl hover:bg-vento-primary hover:text-white transition-all font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">
-                                            Pantalla Completa <ExternalLink size={14} />
+                                        <button onClick={() => setIsPreviewOpen(true)} className="w-full py-3 bg-vento-bg text-vento-primary border border-vento-primary/20 rounded-2xl hover:bg-vento-primary hover:text-white transition-all font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">
+                                            Pantalla Completa <Eye size={14} />
                                         </button>
                                     </div>
                                 </div>
@@ -728,6 +886,13 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                                 </div>
                             </div>
                         </div>
+
+                        {/* Preview Overlay */}
+                        <InvitationPreview 
+                            isOpen={isPreviewOpen} 
+                            onClose={() => setIsPreviewOpen(false)}
+                            event={event}
+                        />
                     </div>
                 )}
             </main>
