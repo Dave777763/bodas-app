@@ -91,10 +91,12 @@ export default function DashboardPage() {
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             console.log(`Fetch eventos exitoso. Documentos encontrados: ${snapshot.size}`);
-            const eventsList = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as VentoEvent[];
+            const eventsList = snapshot.docs
+                .map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }))
+                .filter((e: any) => !e.deleted) as VentoEvent[];
 
             setEvents(eventsList);
             setFetching(false);

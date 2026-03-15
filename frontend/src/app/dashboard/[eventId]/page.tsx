@@ -30,6 +30,7 @@ import { useUITheme } from "@/context/UIThemeContext";
 import {
     doc,
     getDoc,
+    getDocs,
     collection,
     addDoc,
     onSnapshot,
@@ -37,6 +38,7 @@ import {
     orderBy,
     serverTimestamp,
     updateDoc,
+    deleteDoc,
     arrayUnion
 } from "firebase/firestore";
 import ThemeSelector from "@/components/ThemeSelector";
@@ -223,16 +225,25 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     };
 
     const handleDeleteEvent = async () => {
-        if (!confirm("¿ESTAS SEGURO? Esta acción es irreversible y borrará todos los invitados y fotos.")) return;
+        if (!confirm("¿ESTAS SEGURO? Esta acción es irreversible y borrará todos los invitados y fotos del servidor.")) return;
 
         try {
+            // 1. Delete all guests first
+            const guestsRef = collection(db, "events", eventId, "guests");
+            const guestsSnap = await getDocs(guestsRef);
+            
+            const deletePromises = guestsSnap.docs.map(guestDoc => deleteDoc(guestDoc.ref));
+            await Promise.all(deletePromises);
+
+            // 2. Delete the event document
             const eventRef = doc(db, "events", eventId);
-            await updateDoc(eventRef, { deleted: true });
-            alert("Evento eliminado con éxito");
+            await deleteDoc(eventRef);
+
+            alert("Evento eliminado permanentemente");
             router.push("/dashboard");
-        } catch (e) {
+        } catch (e: any) {
             console.error("Error deleting event", e);
-            alert("No se pudo eliminar el evento");
+            alert("No se pudo eliminar el evento por completo: " + (e.message || "Error desconocido"));
         }
     };
 
