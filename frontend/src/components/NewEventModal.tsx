@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { X, Plus, Trash2, Upload, Music, MapPin, Calendar, Clock, Layout, Ticket, ChevronRight, ChevronLeft, Loader2, Check, Image as ImageIcon } from "lucide-react";
+import { X, Plus, Trash2, Upload, Music, MapPin, Calendar, Clock, Layout, Ticket, ChevronRight, ChevronLeft, Loader2, Check, Eye, Image as ImageIcon } from "lucide-react";
 import { db, storage } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { VentoEventType, CountdownType, DressCode, ItineraryMoment } from "@/lib/types";
+import { VentoEventType, CountdownType, DressCode, ItineraryMoment, VentoEvent } from "@/lib/types";
+import InvitationPreview from "./InvitationPreview";
 
 interface NewEventModalProps {
     isOpen: boolean;
@@ -17,6 +18,8 @@ interface NewEventModalProps {
 export default function NewEventModal({ isOpen, onClose, userId, ownerEmail }: NewEventModalProps) {
     const [step, setStep] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [theme, setTheme] = useState("romantic-rose");
     
     // Form State
     const [type, setType] = useState<VentoEventType>('HTML');
@@ -410,13 +413,23 @@ export default function NewEventModal({ isOpen, onClose, userId, ownerEmail }: N
 
                 {/* Footer */}
                 <div className="p-8 border-t border-vento-border flex justify-between items-center bg-vento-bg/50">
-                    <button
-                        onClick={prevStep}
-                        disabled={step === 0 || loading}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${step === 0 ? 'opacity-0' : 'hover:bg-vento-bg text-vento-text-muted'}`}
-                    >
-                        <ChevronLeft size={16} /> Anterior
-                    </button>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={prevStep}
+                            disabled={step === 0 || loading}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${step === 0 ? 'opacity-0' : 'hover:bg-vento-bg text-vento-text-muted'}`}
+                        >
+                            <ChevronLeft size={16} /> Anterior
+                        </button>
+                        {step === steps.length - 1 && (
+                            <button
+                                onClick={() => setIsPreviewOpen(true)}
+                                className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 text-vento-primary rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border border-vento-primary/20"
+                            >
+                                <Eye size={16} /> Ver Invitación
+                            </button>
+                        )}
+                    </div>
                     {step === steps.length - 1 ? (
                         <button
                             onClick={handleSubmit}
@@ -446,6 +459,30 @@ export default function NewEventModal({ isOpen, onClose, userId, ownerEmail }: N
                         </button>
                     )}
                 </div>
+
+                {/* Preview Overlay */}
+                <InvitationPreview 
+                    isOpen={isPreviewOpen} 
+                    onClose={() => setIsPreviewOpen(false)}
+                    event={{
+                        id: 'temp',
+                        name,
+                        type,
+                        date,
+                        location,
+                        mapUrl,
+                        venuePageUrl,
+                        musicUrl,
+                        countdownType,
+                        dressCode,
+                        itinerary,
+                        theme,
+                        coverImageUrl: previews.cover,
+                        countdownImageUrl: previews.countdown,
+                        venueImageUrl: previews.venue,
+                        photoUrl: previews.photo,
+                    } as VentoEvent}
+                />
             </div>
         </div>
     );
