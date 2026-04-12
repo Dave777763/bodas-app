@@ -24,11 +24,14 @@ import {
     Heart,
     ExternalLink,
     FileImage,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Music,
+    Youtube
 } from "lucide-react";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useUITheme } from "@/context/UIThemeContext";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
     doc,
     getDoc,
@@ -105,6 +108,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         activity: ""
     });
     const [addingSchedule, setAddingSchedule] = useState(false);
+    const [isConvertingMusic, setIsConvertingMusic] = useState(false);
 
     useEffect(() => {
         if (!eventId) return;
@@ -274,6 +278,55 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
             document.execCommand('copy');
         } catch (e) { }
         document.body.removeChild(textArea);
+    };
+
+    const handleConvertMusic = async () => {
+        if (!event?.musicUrl) {
+            alert("Primero pega un enlace de YouTube.");
+            return;
+        }
+
+        if (!event.musicUrl.includes("youtube.com") && !event.musicUrl.includes("youtu.be")) {
+            alert("El enlace debe ser de YouTube para convertirlo a MP3.");
+            return;
+        }
+
+        setIsConvertingMusic(true);
+        try {
+            const res = await fetch("/api/music/convert", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: event.musicUrl, eventId: eventId })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                const errorMessage = errorData.error || "Error en la conversión";
+                const errorDetails = errorData.details ? `\n\nDetalles: ${errorData.details}` : "";
+                throw new Error(`${errorMessage}${errorDetails}`);
+            }
+
+            const data = await res.json();
+            
+            // Descargar el audio desde el link temporal de Cobalt y subirlo a nuestro Storage
+            const audioRes = await fetch(data.downloadUrl);
+            const audioBlob = await audioRes.blob();
+            
+            const storageRef = ref(storage, `events/${eventId}/music.mp3`);
+            const uploadResult = await uploadBytes(storageRef, audioBlob);
+            const downloadUrl = await getDownloadURL(uploadResult.ref);
+
+            // Actualizar Firestore
+            const eventRef = doc(db, "events", eventId);
+            await updateDoc(eventRef, { musicUrl: downloadUrl });
+            
+            alert("¡Música convertida y guardada exitosamente!");
+        } catch (err: any) {
+            console.error("Conversion error:", err);
+            alert(`Error: ${err.message || "No se pudo convertir la música"}`);
+        } finally {
+            setIsConvertingMusic(false);
+        }
     };
 
     if (loading) {
@@ -807,23 +860,54 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                                             <div>
                                                 <label className="block text-[10px] font-black uppercase tracking-widest text-vento-text-muted mb-2 ml-1">Enlace de Música</label>
                                                 <div className="flex gap-3">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="https://open.spotify.com/track/..."
-                                                        defaultValue={event.musicUrl || ""}
-                                                        onBlur={async (e) => {
-                                                            const newUrl = e.target.value;
-                                                            if (newUrl === event.musicUrl) return;
-                                                            try {
-                                                                const eventRef = doc(db, "events", eventId);
-                                                                await updateDoc(eventRef, { musicUrl: newUrl });
-                                                            } catch (err) {
-                                                                console.error("Error updating music URL:", err);
-                                                            }
-                                                        }}
-                                                        className="flex-1 px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium text-sm"
-                                                    />
+                                                    <div className="relative flex-1">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="https://open.spotify.com/track/..."
+                                                            defaultValue={event.musicUrl || ""}
+                                                            onBlur={async (e) => {
+                                                                const newUrl = e.target.value;
+                                                                if (newUrl === event.musicUrl) return;
+                                                                try {
+                                                                    const eventRef = doc(db, "events", eventId);
+                                                                    await updateDoc(eventRef, { musicUrl: newUrl });
+                                                                } catch (err) {
+                                                                    console.error("Error updating music URL:", err);
+                                                                }
+                                                            }}
+                                                            className="w-full px-5 py-3.5 rounded-2xl border border-vento-border bg-vento-bg text-vento-text focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary outline-none transition-all font-medium text-sm pr-12"
+                                                        />
+                                                        {event.musicUrl?.includes('firebasestorage') && (
+                                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500">
+                                                                <CheckCircle2 size={18} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <button
+                                                        onClick={handleConvertMusic}
+                                                        disabled={isConvertingMusic || !event.musicUrl || (!event.musicUrl.includes('youtube.com') && !event.musicUrl.includes('youtu.be'))}
+                                                        className={`px-6 py-3.5 rounded-2xl flex items-center gap-2 font-black text-[10px] uppercase tracking-widest transition-all ${
+                                                            isConvertingMusic 
+                                                            ? "bg-vento-bg text-vento-text-muted cursor-not-allowed" 
+                                                            : "bg-vento-primary text-white hover:opacity-90 shadow-lg shadow-vento-primary/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
+                                                        }`}
+                                                    >
+                                                        {isConvertingMusic ? (
+                                                            <>
+                                                                <Loader2 size={16} className="animate-spin" /> Convirtiendo...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Youtube size={16} /> Convertir a MP3
+                                                            </>
+                                                        )}
+                                                    </button>
                                                 </div>
+                                                <p className="mt-4 text-[10px] text-vento-text-muted font-bold italic">
+                                                    {event.musicUrl?.includes('firebasestorage') 
+                                                        ? "✅ Música alojada como MP3. Se reproducirá directamente en la invitación."
+                                                        : "Sugerencia: Pega un link de YouTube y presiona 'Convertir' para una mejor experiencia."}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Music, Play, Volume2 } from "lucide-react";
 
 interface MusicPlayerProps {
     url: string;
@@ -8,6 +9,39 @@ interface MusicPlayerProps {
 
 export default function MusicPlayer({ url }: MusicPlayerProps) {
     if (!url) return null;
+
+    // MP3 Direct Logic (Firebase Storage or others)
+    if (url.includes(".mp3") || url.includes("firebasestorage") || url.includes("audio")) {
+        return (
+            <div className="w-full max-w-lg mx-auto my-6 animate-fadeIn px-2">
+                <div className="flex items-center gap-2 mb-3 px-1">
+                    <div className="w-2 h-2 rounded-full bg-vento-primary animate-pulse"></div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-vento-primary/80">Audio Premium Seleccionado</span>
+                </div>
+                <div className="bg-white/5 backdrop-blur-sm p-4 rounded-3xl border border-white/10 shadow-2xl flex items-center gap-4 transition-all hover:bg-white/10">
+                    <div className="w-12 h-12 bg-vento-primary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-vento-primary/30">
+                         <Music size={20} />
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2 ml-1">Música de Fondo</p>
+                        <audio 
+                            src={url} 
+                            controls 
+                            className="w-full h-8 opacity-80 hover:opacity-100 transition-opacity"
+                        />
+                    </div>
+                </div>
+                <style jsx>{`
+                    audio::-webkit-media-controls-enclosure {
+                        background-color: transparent;
+                    }
+                    audio::-webkit-media-controls-panel {
+                        background-color: transparent;
+                    }
+                `}</style>
+            </div>
+        );
+    }
 
     // Spotify Logic
     if (url.includes("spotify.com")) {
