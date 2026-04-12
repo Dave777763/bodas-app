@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-// Deployment SYNC trigger: 2026-04-12 - Cobalt v10 Fixed Integration 
+// Deployment SYNC trigger: 2026-04-12 - Cobalt v11 Force UI Refresh 
 import { useRouter } from "next/navigation";
 import {
     ChevronLeft,
