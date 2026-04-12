@@ -62,11 +62,6 @@ import Toggle from "@/components/Toggle"; // Assuming I might need to create it 
 const ADMIN_EMAIL = "marroquindavid635@gmail.com";
 
 
-interface ScheduleItem {
-    id: string;
-    time: string;
-    activity: string;
-}
 
 // Using VentoEvent from types.ts
 
@@ -103,12 +98,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         status: "Pendiente" as "Confirmado" | "Pendiente" | "Declinado"
     });
 
-    // Schedule Form
-    const [scheduleForm, setScheduleForm] = useState({
-        time: "",
-        activity: ""
-    });
-    const [addingSchedule, setAddingSchedule] = useState(false);
     const [isConvertingMusic, setIsConvertingMusic] = useState(false);
 
     useEffect(() => {
@@ -178,53 +167,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
         }
     };
 
-    const handleAddScheduleItem = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setAddingSchedule(true);
-        try {
-            const newItem: ScheduleItem = {
-                id: Date.now().toString(),
-                time: scheduleForm.time,
-                activity: scheduleForm.activity
-            };
-
-            const eventRef = doc(db, "events", eventId);
-            await updateDoc(eventRef, {
-                schedule: arrayUnion(newItem)
-            });
-
-            // Ya no necesitamos setEvent manual aquí, 
-            // onSnapshot se encarga de actualizarlo solo.
-            setScheduleForm({ time: "", activity: "" });
-        } catch (error) {
-            console.error("Error adding schedule item:", error);
-            alert("Error al guardar actividad");
-        } finally {
-            setAddingSchedule(false);
-        }
-    };
-
-    const handleDeleteScheduleItem = async (itemId: string) => {
-        if (!confirm("¿Eliminar esta actividad?")) return;
-
-        // Note: arrayRemove requires the EXACT object to remove. 
-        // Since we might not have the exact object reference easily if modified elsewhere, 
-        // a safer way usually implies reading the doc, filtering, and writing back.
-        // For simplicity with this structure, let's try reading-modifying-writing entire array 
-        // or just filtering local if we want to be quick, but let's do it right.
-
-        const newSchedule = event?.schedule?.filter(i => i.id !== itemId) || [];
-
-        try {
-            const eventRef = doc(db, "events", eventId);
-            await updateDoc(eventRef, {
-                schedule: newSchedule
-            });
-            // onSnapshot actualizará el estado automáticamente
-        } catch (e) {
-            console.error("Error deleting item", e);
-        }
-    };
 
     const handleDeleteEvent = async () => {
         if (!confirm("¿ESTAS SEGURO? Esta acción es irreversible y borrará todos los invitados y fotos del servidor.")) return;
