@@ -99,6 +99,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
     });
 
     const [isConvertingMusic, setIsConvertingMusic] = useState(false);
+    const [isUploadingMusic, setIsUploadingMusic] = useState(false);
 
     useEffect(() => {
         if (!eventId) return;
@@ -269,6 +270,34 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
             alert(`Error: ${err.message || "No se pudo convertir la música"}`);
         } finally {
             setIsConvertingMusic(false);
+        }
+    };
+
+    const handleManualMusicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.type !== "audio/mpeg" && !file.name.endsWith(".mp3")) {
+            alert("Por favor selecciona un archivo MP3 válido.");
+            return;
+        }
+
+        setIsUploadingMusic(true);
+        try {
+            const storageRef = ref(storage, `events/${eventId}/music.mp3`);
+            const uploadResult = await uploadBytes(storageRef, file);
+            const downloadUrl = await getDownloadURL(uploadResult.ref);
+
+            // Actualizar Firestore
+            const eventRef = doc(db, "events", eventId);
+            await updateDoc(eventRef, { musicUrl: downloadUrl });
+
+            alert("¡Música subida y guardada exitosamente!");
+        } catch (err: any) {
+            console.error("Upload error:", err);
+            alert(`Error al subir música: ${err.message || "Error desconocido"}`);
+        } finally {
+            setIsUploadingMusic(false);
         }
     };
 
@@ -826,25 +855,50 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <button
-                                                        onClick={handleConvertMusic}
-                                                        disabled={isConvertingMusic || !event.musicUrl || (!event.musicUrl.includes('youtube.com') && !event.musicUrl.includes('youtu.be'))}
-                                                        className={`px-6 py-3.5 rounded-2xl flex items-center gap-2 font-black text-[10px] uppercase tracking-widest transition-all ${
-                                                            isConvertingMusic 
-                                                            ? "bg-vento-bg text-vento-text-muted cursor-not-allowed" 
-                                                            : "bg-vento-primary text-white hover:opacity-90 shadow-lg shadow-vento-primary/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale"
-                                                        }`}
-                                                    >
-                                                        {isConvertingMusic ? (
-                                                            <>
-                                                                <Loader2 size={16} className="animate-spin" /> Convirtiendo...
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <Youtube size={16} /> Convertir a MP3
-                                                            </>
-                                                        )}
-                                                    </button>
+                                                    <div className="flex flex-col sm:flex-row gap-2">
+                                                     <button 
+                                                         onClick={handleConvertMusic}
+                                                         disabled={isConvertingMusic || isUploadingMusic}
+                                                         className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-[1.2rem] text-xs font-bold transition-all ${
+                                                             isConvertingMusic 
+                                                                 ? 'bg-vento-bg text-vento-text-muted cursor-not-allowed' 
+                                                                 : 'bg-vento-primary text-white hover:bg-vento-primary/90 shadow-lg shadow-vento-primary/20'
+                                                         }`}
+                                                     >
+                                                         {isConvertingMusic ? (
+                                                             <>
+                                                                 <Loader2 size={16} className="animate-spin" /> Convirtiendo...
+                                                             </>
+                                                         ) : (
+                                                             <>
+                                                                 <Youtube size={16} /> Convertir a MP3
+                                                             </>
+                                                         )}
+                                                     </button>
+
+                                                     <label className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-[1.2rem] text-xs font-bold transition-all cursor-pointer border ${
+                                                         isUploadingMusic 
+                                                             ? 'bg-vento-bg text-vento-text-muted cursor-not-allowed border-vento-border' 
+                                                             : 'bg-white text-vento-primary hover:bg-vento-primary/5 border-vento-primary/20 shadow-sm'
+                                                     }`}>
+                                                         {isUploadingMusic ? (
+                                                             <>
+                                                                 <Loader2 size={16} className="animate-spin" /> Subiendo...
+                                                             </>
+                                                         ) : (
+                                                             <>
+                                                                 <Music size={16} /> Subir MP3
+                                                             </>
+                                                         )}
+                                                         <input 
+                                                             type="file" 
+                                                             accept="audio/mpeg" 
+                                                             className="hidden" 
+                                                             onChange={handleManualMusicUpload} 
+                                                             disabled={isUploadingMusic || isConvertingMusic}
+                                                         />
+                                                     </label>
+                                                 </div>
                                                 </div>
                                                 <p className="mt-4 text-[10px] text-vento-text-muted font-bold italic">
                                                     {event.musicUrl?.includes('firebasestorage') 
