@@ -11,7 +11,7 @@ export async function POST(req: Request) {
         console.log(`Converting YouTube URL: ${url} for event: ${eventId}`);
 
         // 1. Get list of available instances from environment
-        const instancesStr = process.env.COBALT_INSTANCES || process.env.COBALT_API_URL || "https://api.cobalt.tools/";
+        const instancesStr = process.env.COBALT_INSTANCES || process.env.COBALT_API_URL || "https://nuko-c.meowing.de/,https://subito-c.meowing.de/,https://melon.clxxped.lol/,https://fox.kittycat.boo/,https://api.cobalt.blackcat.sweeux.org/";
         const instances = instancesStr.split(",").map(i => i.trim()).filter(i => i.length > 0);
         
         console.log(`Trying ${instances.length} Cobalt instances...`);
@@ -27,17 +27,15 @@ export async function POST(req: Request) {
                     headers: {
                         "Accept": "application/json",
                         "Content-Type": "application/json",
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+                        "User-Agent": "Mozilla/5.0 (Vento Wedding App; Next.js)"
                     },
                     body: JSON.stringify({
                         url: url,
-                        audioBitrate: "128",
-                        audioFormat: "mp3",
                         downloadMode: "audio",
-                        videoQuality: "720",
-                        filenameStyle: "pretty"
+                        audioFormat: "mp3",
+                        audioBitrate: "128"
                     }),
-                    signal: AbortSignal.timeout(20000) // 20s timeout per instance
+                    signal: AbortSignal.timeout(15000) // 15s timeout per instance
                 });
 
                 if (cobaltResponse.ok) {
