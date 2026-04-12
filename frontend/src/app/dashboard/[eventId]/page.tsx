@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-// Deployment SYNC trigger: 2026-04-12 - Music Conversion Fix (v14) 
+// Deployment SYNC trigger: 2026-04-12 - YouTube Verified Cobalt (v15) 
 import { useRouter } from "next/navigation";
 import {
     ChevronLeft,

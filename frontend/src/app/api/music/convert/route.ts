@@ -10,8 +10,8 @@ export async function POST(req: Request) {
 
         console.log(`Converting YouTube URL: ${url} for event: ${eventId}`);
 
-        // 1. Get list of available instances from environment
-        const instancesStr = process.env.COBALT_INSTANCES || process.env.COBALT_API_URL || "https://nuko-c.meowing.de/,https://subito-c.meowing.de/,https://melon.clxxped.lol/,https://fox.kittycat.boo/,https://api.cobalt.blackcat.sweeux.org/";
+        // 1. Get list of available instances (Verified for YouTube on 2026-04-12)
+        const instancesStr = process.env.COBALT_INSTANCES || process.env.COBALT_API_URL || "https://nuko-c.meowing.de/,https://subito-c.meowing.de/,https://cobalt.alpha.wolfy.love/,https://lime.clxxped.lol/,https://api.cobalt.blackcat.sweeux.org/";
         const instances = instancesStr.split(",").map(i => i.trim()).filter(i => i.length > 0);
         
         console.log(`Trying ${instances.length} Cobalt instances...`);
