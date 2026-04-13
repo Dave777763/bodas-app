@@ -237,6 +237,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
 
         setIsConvertingMusic(true);
         try {
+            // API now returns the audio binary directly (avoids 0 KB Cobalt redirect issue)
             const res = await fetch("/api/music/convert", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -250,14 +251,16 @@ export default function EventDetailPage({ params }: { params: Promise<{ eventId:
                 throw new Error(`${errorMessage}${errorDetails}`);
             }
 
-            const data = await res.json();
-            
-            // Descargar el audio desde el link temporal de Cobalt y subirlo a nuestro Storage
-            const audioRes = await fetch(data.downloadUrl);
-            const audioBlob = await audioRes.blob();
-            
+            // The API streams the MP3 binary — read it as a Blob directly
+            const audioBlob = await res.blob();
+
+            if (audioBlob.size === 0) {
+                throw new Error("El audio descargado está vacío. Intenta con otro enlace de YouTube.");
+            }
+
+            // Upload to Firebase Storage
             const storageRef = ref(storage, `events/${eventId}/music.mp3`);
-            const uploadResult = await uploadBytes(storageRef, audioBlob);
+            const uploadResult = await uploadBytes(storageRef, audioBlob, { contentType: "audio/mpeg" });
             const downloadUrl = await getDownloadURL(uploadResult.ref);
 
             // Actualizar Firestore
