@@ -1,120 +1,236 @@
 "use client";
 
-import React from "react";
-import { Music, Play, Volume2 } from "lucide-react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { Music, Pause, Play } from "lucide-react";
 
 interface MusicPlayerProps {
     url: string;
 }
 
 export default function MusicPlayer({ url }: MusicPlayerProps) {
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    // Controls whether the YouTube/Spotify iframe is injected (only after user interaction)
+    const [iframeReady, setIframeReady] = useState(false);
+
+    const isMP3 = !!url && (url.includes(".mp3") || url.includes("firebasestorage") || url.includes("audio"));
+    const isYouTube = !!url && (url.includes("youtube.com") || url.includes("youtu.be") || url.includes("music.youtube.com"));
+    const isSpotify = !!url && url.includes("spotify.com");
+
+    // ── MP3: create Audio element, play on first user gesture ──────────────
+    useEffect(() => {
+        if (!isMP3 || !url) return;
+
+        const audio = new Audio(url);
+        audio.loop = true;
+        audio.volume = 0.7;
+        audioRef.current = audio;
+
+        const startOnInteraction = () => {
+            if (audioRef.current?.paused) {
+                audioRef.current.play()
+                    .then(() => setIsPlaying(true))
+                    .catch(() => {});
+            }
+        };
+
+        // Try immediate autoplay (succeeds if browser allows it)
+        audio.play()
+            .then(() => setIsPlaying(true))
+            .catch(() => {
+                // Browser blocked autoplay → start on first user gesture
+                document.addEventListener("click", startOnInteraction, { once: true });
+                document.addEventListener("touchstart", startOnInteraction, { once: true });
+                document.addEventListener("keydown", startOnInteraction, { once: true });
+            });
+
+        return () => {
+            audio.pause();
+            audio.src = "";
+            audioRef.current = null;
+            document.removeEventListener("click", startOnInteraction);
+            document.removeEventListener("touchstart", startOnInteraction);
+            document.removeEventListener("keydown", startOnInteraction);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [url]);
+
+    // ── YouTube / Spotify: inject iframe AFTER first user gesture ──────────
+    useEffect(() => {
+        if (!isYouTube && !isSpotify) return;
+
+        const activateOnInteraction = () => setIframeReady(true);
+
+        document.addEventListener("click", activateOnInteraction, { once: true });
+        document.addEventListener("touchstart", activateOnInteraction, { once: true });
+        document.addEventListener("keydown", activateOnInteraction, { once: true });
+
+        return () => {
+            document.removeEventListener("click", activateOnInteraction);
+            document.removeEventListener("touchstart", activateOnInteraction);
+            document.removeEventListener("keydown", activateOnInteraction);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [url]);
+
+    const toggleMP3 = useCallback(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        if (isPlaying) {
+            audio.pause();
+            setIsPlaying(false);
+        } else {
+            audio.play().then(() => setIsPlaying(true)).catch(() => {});
+        }
+    }, [isPlaying]);
+
     if (!url) return null;
 
-    // MP3 Direct Logic (Firebase Storage or others)
-    if (url.includes(".mp3") || url.includes("firebasestorage") || url.includes("audio")) {
-        return (
-            <div className="w-full max-w-lg mx-auto my-6 animate-fadeIn px-2">
-                <div className="flex items-center gap-2 mb-3 px-1">
-                    <div className="w-2 h-2 rounded-full bg-vento-primary animate-pulse"></div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-vento-primary/80">Audio Premium Seleccionado</span>
-                </div>
-                <div className="bg-white/5 backdrop-blur-sm p-4 rounded-3xl border border-white/10 shadow-2xl flex items-center gap-4 transition-all hover:bg-white/10">
-                    <div className="w-12 h-12 bg-vento-primary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-vento-primary/30">
-                         <Music size={20} />
-                    </div>
-                    <div className="flex-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2 ml-1">Música de Fondo</p>
-                        <audio 
-                            src={url} 
-                            controls 
-                            className="w-full h-8 opacity-80 hover:opacity-100 transition-opacity"
-                        />
-                    </div>
-                </div>
-                <style jsx>{`
-                    audio::-webkit-media-controls-enclosure {
-                        background-color: transparent;
-                    }
-                    audio::-webkit-media-controls-panel {
-                        background-color: transparent;
-                    }
-                `}</style>
-            </div>
-        );
-    }
-
-    // Spotify Logic
-    if (url.includes("spotify.com")) {
-        let embedUrl = url;
-        
-        // Convert open.spotify.com/track/ID to open.spotify.com/embed/track/ID
-        if (url.includes("/track/")) {
-            embedUrl = url.replace("open.spotify.com/track/", "open.spotify.com/embed/track/");
-        } else if (url.includes("/playlist/")) {
-            embedUrl = url.replace("open.spotify.com/playlist/", "open.spotify.com/embed/playlist/");
-        } else if (url.includes("/album/")) {
-            embedUrl = url.replace("open.spotify.com/album/", "open.spotify.com/embed/album/");
-        }
-
-        // Clean up query params to avoid issues but keep embed format
-        const cleanUrl = embedUrl.split('?')[0];
-
-        return (
-            <div className="w-full max-w-lg mx-auto my-6 animate-fadeIn px-2">
-                <div className="flex items-center gap-2 mb-2 px-1">
-                    <div className="w-2 h-2 rounded-full bg-[#1DB954] animate-pulse"></div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#1DB954]/80">Reproduciendo desde Spotify</span>
-                </div>
-                <iframe
-                    src={`${cleanUrl}?utm_source=generator&theme=0`}
-                    width="100%"
-                    height="80"
-                    frameBorder="0"
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                    className="rounded-2xl shadow-xl border border-white/10"
-                ></iframe>
-            </div>
-        );
-    }
-
-    // YouTube Music / YouTube Logic
-    if (url.includes("youtube.com") || url.includes("youtu.be") || url.includes("music.youtube.com")) {
+    // ── YouTube ─────────────────────────────────────────────────────────────
+    if (isYouTube) {
         let videoId = "";
-        
-        if (url.includes("v=")) {
-            videoId = url.split("v=")[1]?.split("&")[0];
-        } else if (url.includes("youtu.be/")) {
-            videoId = url.split("youtu.be/")[1]?.split("?")[0];
-        } else if (url.includes("embed/")) {
-            videoId = url.split("embed/")[1]?.split("?")[0];
-        }
-
+        if (url.includes("v="))        videoId = url.split("v=")[1]?.split("&")[0] ?? "";
+        else if (url.includes("youtu.be/")) videoId = url.split("youtu.be/")[1]?.split("?")[0] ?? "";
+        else if (url.includes("embed/"))    videoId = url.split("embed/")[1]?.split("?")[0] ?? "";
         if (!videoId) return null;
 
         return (
-            <div className="w-full max-w-lg mx-auto my-6 animate-fadeIn px-2">
-                <div className="flex items-center gap-2 mb-2 px-1">
-                    <div className="w-2 h-2 rounded-full bg-[#FF0000] animate-pulse"></div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#FF0000]/80">Reproduciendo desde YouTube Music</span>
-                </div>
-                <div className="relative h-[60px] rounded-2xl overflow-hidden shadow-xl border border-white/10 bg-black">
+            <>
+                {/* Injected only after user gesture → autoplay is allowed */}
+                {iframeReady && (
                     <iframe
-                        src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autohide=1&controls=1&showinfo=0`}
-                        className="absolute top-[-300px] left-0 w-full h-[400px]"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        title="Music Player"
-                    ></iframe>
-                    {/* Dark gradient overlay to hide video content further and focus on controls */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-black via-black/40 to-transparent pointer-events-none"></div>
-                </div>
-            </div>
+                        key="yt-music"
+                        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&rel=0&modestbranding=1`}
+                        allow="autoplay; encrypted-media"
+                        title="Background Music"
+                        style={{
+                            position: "fixed",
+                            width: 1,
+                            height: 1,
+                            opacity: 0,
+                            pointerEvents: "none",
+                            border: "none",
+                            bottom: 0,
+                            left: 0,
+                        }}
+                    />
+                )}
+                <FloatingMusicButton isPlaying={iframeReady} label={iframeReady ? "Reproduciendo música" : "La música empezará al navegar"} />
+            </>
         );
     }
 
+    // ── Spotify ─────────────────────────────────────────────────────────────
+    if (isSpotify) {
+        let embedUrl = url;
+        if (url.includes("/track/"))    embedUrl = url.replace("open.spotify.com/track/",    "open.spotify.com/embed/track/");
+        else if (url.includes("/playlist/")) embedUrl = url.replace("open.spotify.com/playlist/", "open.spotify.com/embed/playlist/");
+        else if (url.includes("/album/"))    embedUrl = url.replace("open.spotify.com/album/",    "open.spotify.com/embed/album/");
+        const cleanUrl = embedUrl.split("?")[0];
+
+        return (
+            <>
+                {iframeReady && (
+                    <iframe
+                        key="sp-music"
+                        src={`${cleanUrl}?utm_source=generator&theme=0&autoplay=1`}
+                        width="1"
+                        height="1"
+                        frameBorder="0"
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                        style={{
+                            position: "fixed",
+                            opacity: 0,
+                            pointerEvents: "none",
+                            bottom: 0,
+                            left: 0,
+                        }}
+                        title="Background Music"
+                    />
+                )}
+                <FloatingMusicButton isPlaying={iframeReady} label={iframeReady ? "Reproduciendo música" : "La música empezará al navegar"} />
+            </>
+        );
+    }
+
+    // ── MP3 ─────────────────────────────────────────────────────────────────
+    if (isMP3) {
+        return (
+            <FloatingMusicButton
+                isPlaying={isPlaying}
+                onToggle={toggleMP3}
+                label={isPlaying ? "Pausar música" : "Reproducir música"}
+            />
+        );
+    }
+
+    return null;
+}
+
+// ── Floating music button ────────────────────────────────────────────────────
+interface FloatingMusicButtonProps {
+    isPlaying: boolean;
+    onToggle?: () => void;
+    label?: string;
+}
+
+function FloatingMusicButton({ isPlaying, onToggle, label }: FloatingMusicButtonProps) {
     return (
-        <div className="text-center p-4 bg-red-50 text-red-500 rounded-xl text-xs italic">
-            Formato de música no compatible. Usa Spotify o YouTube Music.
-        </div>
+        <button
+            onClick={onToggle}
+            title={label}
+            aria-label={label}
+            style={{
+                cursor: onToggle ? "pointer" : "default",
+                background: isPlaying
+                    ? "rgba(255,255,255,0.15)"
+                    : "rgba(0,0,0,0.45)",
+                backdropFilter: "blur(14px)",
+                WebkitBackdropFilter: "blur(14px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: "50%",
+                width: 44,
+                height: 44,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.35)",
+                transition: "transform 0.2s ease, background 0.2s ease",
+                position: "relative",
+                flexShrink: 0,
+            }}
+            onMouseEnter={e => { if (onToggle) e.currentTarget.style.transform = "scale(1.1)"; }}
+            onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+        >
+            {/* Animated pulse ring when playing */}
+            {isPlaying && (
+                <span
+                    aria-hidden="true"
+                    style={{
+                        position: "absolute",
+                        inset: -5,
+                        borderRadius: "50%",
+                        border: "2px solid rgba(255,255,255,0.35)",
+                        animation: "musicPulse 2.4s ease-in-out infinite",
+                        pointerEvents: "none",
+                    }}
+                />
+            )}
+
+            {onToggle ? (
+                isPlaying ? <Pause size={17} /> : <Play size={17} />
+            ) : (
+                <Music size={17} style={{ opacity: isPlaying ? 1 : 0.5 }} />
+            )}
+
+            <style>{`
+                @keyframes musicPulse {
+                    0%   { transform: scale(1);    opacity: 0.7; }
+                    60%  { transform: scale(1.35); opacity: 0; }
+                    100% { transform: scale(1.35); opacity: 0; }
+                }
+            `}</style>
+        </button>
     );
 }
