@@ -24,7 +24,8 @@ export default function DashboardPage() {
     const [fetching, setFetching] = useState(true);
     const [events, setEvents] = useState<VentoEvent[]>([]);
     const [globalStats, setGlobalStats] = useState({ confirmados: 0, pendientes: 0 });
-    const [storageStats, setStorageStats] = useState<{ totalBytes: number; formatted: string }>({ totalBytes: 0, formatted: "0 MB" });
+    const [storageStats, setStorageStats] = useState<{ totalBytes: number; formatted: string }>({ totalBytes: 0, formatted: "Haz clic" });
+    const [calculatingStorage, setCalculatingStorage] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
 
     // Escuchar invitados de TODOS los eventos del usuario (collectionGroup)
@@ -100,11 +101,6 @@ export default function DashboardPage() {
 
             setEvents(eventsList);
             setFetching(false);
-
-            // Si es admin, calcular almacenamiento al cargar eventos
-            if (isAdmin) {
-                calculateStorageUsage(eventsList);
-            }
         }, (error) => {
             console.error("Error fetching events:", error);
             alert(`Error al cargar eventos: ${error.message}\nVerifica tus permisos en Firebase.`);
@@ -115,6 +111,8 @@ export default function DashboardPage() {
     }, [user]);
 
     const calculateStorageUsage = async (eventsList: VentoEvent[]) => {
+        if (calculatingStorage) return;
+        setCalculatingStorage(true);
         console.log("Calculando uso de almacenamiento...");
         let totalSize = 0;
 
@@ -126,7 +124,9 @@ export default function DashboardPage() {
                     const photos = await listAll(photosRef);
                     const photoSizes = await Promise.all(photos.items.map(item => getMetadata(item).then(m => m.size)));
                     totalSize += photoSizes.reduce((a, b) => a + b, 0);
-                } catch (e) { /* Carpeta podría no existir */ }
+                } catch (e: any) { 
+                    if (e?.code === 'storage/quota-exceeded' || e?.message?.includes('402')) throw e;
+                }
 
                 // Imágenes de configuración
                 const configRef = ref(storage, `events/${event.id}/config`);
@@ -134,7 +134,9 @@ export default function DashboardPage() {
                     const configs = await listAll(configRef);
                     const configSizes = await Promise.all(configs.items.map(item => getMetadata(item).then(m => m.size)));
                     totalSize += configSizes.reduce((a, b) => a + b, 0);
-                } catch (e) { /* Carpeta podría no existir */ }
+                } catch (e: any) { 
+                    if (e?.code === 'storage/quota-exceeded' || e?.message?.includes('402')) throw e;
+                }
             }
 
             // Formatear tamaño
@@ -148,8 +150,15 @@ export default function DashboardPage() {
             }
 
             setStorageStats({ totalBytes: totalSize, formatted });
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error calculando almacenamiento:", error);
+            if (error?.code === 'storage/quota-exceeded' || error?.message?.includes('402') || error?.status === 402) {
+                setStorageStats({ totalBytes: 0, formatted: "Límite 402" });
+            } else {
+                setStorageStats({ totalBytes: 0, formatted: "Error" });
+            }
+        } finally {
+            setCalculatingStorage(false);
         }
     };
 
@@ -210,13 +219,26 @@ export default function DashboardPage() {
                     <p className="text-5xl font-black text-blue-500 tabular-nums tracking-tighter">{events.length}</p>
                 </div>
 
-                {user?.email?.toLowerCase().trim() === "marroquindavid635@gmail.com" && (
-                    <div className="bg-vento-card p-8 rounded-[2rem] shadow-sm border border-vento-border group hover:border-vento-primary/50 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 delay-[450ms] fill-mode-both">
+                {user?.email?.toLowerCase().trim() === ADMIN_EMAIL && (
+                    <div 
+                        onClick={() => calculateStorageUsage(events)}
+                        title="Haz clic para calcular el uso de almacenamiento"
+                        className="bg-vento-card p-8 rounded-[2rem] shadow-sm border border-vento-border group hover:border-vento-primary/50 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 delay-[450ms] fill-mode-both cursor-pointer select-none"
+                    >
                         <div className="flex justify-between items-start mb-3">
                             <h3 className="text-vento-text-muted text-[10px] font-black uppercase tracking-[0.2em]">Uso Almacenamiento</h3>
-                            <Database size={14} className="text-rose-500 animate-pulse" />
+                            {calculatingStorage ? (
+                                <Loader2 size={14} className="text-rose-500 animate-spin" />
+                            ) : (
+                                <Database size={14} className="text-rose-500 group-hover:scale-125 transition-transform" />
+                            )}
                         </div>
-                        <p className="text-5xl font-black text-rose-500 tabular-nums tracking-tighter">{storageStats.formatted}</p>
+                        <p className="text-4xl font-black text-rose-500 tabular-nums tracking-tighter">
+                            {calculatingStorage ? "Calculando..." : storageStats.formatted}
+                        </p>
+                        <p className="text-[10px] text-vento-text-muted mt-2 font-bold opacity-60 group-hover:opacity-100 transition-opacity">
+                            {calculatingStorage ? "Consultando archivos..." : "Clic para recalcular"}
+                        </p>
                     </div>
                 )}
             </div>

@@ -125,9 +125,14 @@ export default function NewEventModal({ isOpen, onClose, userId, ownerEmail }: N
 
             await addDoc(collection(db, "events"), eventData);
             onClose();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error creating event:", error);
-            alert("Error al crear el evento. Revisa la consola.");
+            const msg = error?.message || error?.code || "";
+            if (msg.includes("402") || msg.includes("quota-exceeded") || error?.status === 402) {
+                alert("⚠️ Límite diario de Firebase Storage superado (Error 402).\n\nPara adjuntar imágenes ahora mismo, actualiza tu proyecto al Plan Blaze en la consola de Firebase, o crea la invitación sin imágenes por el momento.");
+            } else {
+                alert(`Error al crear el evento:\n${msg || "Revisa la consola para más detalles."}`);
+            }
         } finally {
             setLoading(false);
         }
