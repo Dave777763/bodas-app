@@ -19,7 +19,7 @@ export default function Home() {
           Tu evento, <span className="text-rose-600">perfectamente</span> organizado.
         </h2>
         <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
-          Gestiona invitados, envía invitaciones digitales y controla cada detalle de tu boda o XV años desde un solo lugar.
+          Gestiona invitados, envía invitaciones digitales y controla cada detalle de tus eventos y celebraciones desde un solo lugar.
         </p>
 
         <div className="flex justify-center gap-4">

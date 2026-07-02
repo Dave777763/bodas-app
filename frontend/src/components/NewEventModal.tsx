@@ -185,7 +185,7 @@ export default function NewEventModal({ isOpen, onClose, userId, ownerEmail }: N
                                         <Layout size={32} />
                                     </div>
                                     <h5 className="text-xl font-black mb-2">Personalizada</h5>
-                                    <p className="text-sm text-vento-text-muted leading-relaxed uppercase font-bold text-[10px] tracking-wider">Diseño web dinámico (HTML). Ideal para bodas elegantes y completas.</p>
+                                    <p className="text-sm text-vento-text-muted leading-relaxed uppercase font-bold text-[10px] tracking-wider">Diseño web dinámico (HTML). Ideal para celebraciones elegantes y completas.</p>
                                 </button>
                                 <button
                                     onClick={() => { setType('Ticket'); nextStep(); }}
@@ -209,7 +209,7 @@ export default function NewEventModal({ isOpen, onClose, userId, ownerEmail }: N
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder="Ej. Boda de Ana & Carlos"
+                                    placeholder="Ej. Festejo de Zuri / Boda Ana & Carlos / XV Años"
                                     className="w-full px-6 py-4 rounded-2xl border border-vento-border bg-vento-bg text-vento-text outline-none focus:ring-4 focus:ring-vento-primary/10 focus:border-vento-primary transition-all font-bold"
                                 />
                             </div>

@@ -50,7 +50,7 @@ export function HTMLLayout({ event, guest, theme, rsvpDone, onOpenRSVP, isPrevie
                 
                 <div className="relative z-10 animate-fadeInUp">
                     <p className="text-xl md:text-2xl text-white/90 uppercase tracking-[0.4em] font-light mb-6">
-                        Nuestra Boda
+                        Celebra Con Nosotros
                     </p>
                     <h1 
                         className="text-7xl md:text-9xl mb-8 text-white drop-shadow-2xl"
@@ -106,7 +106,7 @@ export function HTMLLayout({ event, guest, theme, rsvpDone, onOpenRSVP, isPrevie
                         </div>
                     </div>
                     <div className="mt-12 text-center max-w-lg">
-                        <p className="text-vento-text-muted italic font-serif text-lg">"En el amor no hay distancias, porque siempre estaremos juntos."</p>
+                        <p className="text-vento-text-muted italic font-serif text-lg">"Los mejores momentos de la vida son los que compartimos con las personas que más queremos."</p>
                     </div>
                 </section>
             )}
