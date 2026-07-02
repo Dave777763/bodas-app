@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { storage } from "@/lib/firebase";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { storage, db } from "@/lib/firebase";
+import { collection, addDoc } from "firebase/firestore";
+import { uploadEventImage } from "@/lib/storageHelper";
 import { Camera, RefreshCw, CheckCircle2, Loader2, UploadCloud, X, CameraIcon } from "lucide-react";
 
 interface CameraCaptureProps {
@@ -106,39 +107,31 @@ export default function CameraCapture({ eventId, guestId, guestName, theme }: Ca
 
             // Nombre único para la foto
             const fileName = `${Date.now()}_${guestId}.jpg`;
-            const storageRef = ref(storage, `events/${eventId}/photos/${fileName}`);
-
-            const uploadTask = uploadBytesResumable(storageRef, blob, {
-                contentType: "image/jpeg",
-                customMetadata: {
-                    guestName: guestName,
-                    guestId: guestId,
-                    uploadedAt: new Date().toISOString()
-                }
-            });
-
-            uploadTask.on(
-                "state_changed",
-                (snapshot) => {
-                    const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    setProgress(Math.round(p));
-                },
-                (err) => {
-                    console.error("Error en la subida:", err);
-                    setError("Hubo un error al subir la foto.");
-                    setUploading(false);
-                },
-                async () => {
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    console.log("Archivo disponible en:", downloadURL);
-                    setUploading(false);
-                    setIsSuccess(true);
-                    setPreviewUrl(null);
-                }
+            const downloadURL = await uploadEventImage(
+                `events/${eventId}/photos/${fileName}`,
+                blob,
+                (p) => setProgress(p)
             );
+
+            // Guardar también en Firestore para garantizar persistencia y fallback
+            try {
+                await addDoc(collection(db, "events", eventId, "photos"), {
+                    url: downloadURL,
+                    name: fileName,
+                    guestName: guestName || "Invitado",
+                    guestId: guestId || "",
+                    uploadedAt: new Date().toISOString()
+                });
+            } catch (fsErr) {
+                console.warn("No se pudo guardar registro en Firestore:", fsErr);
+            }
+
+            setUploading(false);
+            setIsSuccess(true);
+            setPreviewUrl(null);
         } catch (err) {
-            console.error("Error al procesar la subida:", err);
-            setError("Error al procesar la imagen.");
+            console.error("Error al subir foto:", err);
+            setError("No se pudo guardar la foto. Por favor intenta nuevamente.");
             setUploading(false);
         }
     };

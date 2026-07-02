@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { storage } from "@/lib/firebase";
+import { storage, db } from "@/lib/firebase";
 import { ref, listAll, getDownloadURL, getMetadata, FullMetadata } from "firebase/storage";
+import { collection, getDocs } from "firebase/firestore";
 import { Loader2, Download, ExternalLink, Image as ImageIcon, User, Calendar } from "lucide-react";
 
 interface PhotoItem {
@@ -26,6 +27,28 @@ export default function PhotoGallery({ eventId }: PhotoGalleryProps) {
         const fetchPhotos = async () => {
             setLoading(true);
             setError(null);
+            const allPhotosMap = new Map<string, PhotoItem>();
+
+            // 1. Fetch from Firestore subcollection (includes fallbacks)
+            try {
+                const querySnapshot = await getDocs(collection(db, "events", eventId, "photos"));
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    if (data.url) {
+                        allPhotosMap.set(data.url, {
+                            url: data.url,
+                            name: data.name || docSnap.id,
+                            guestName: data.guestName || "Invitado",
+                            uploadedAt: data.uploadedAt || new Date().toISOString(),
+                            fullPath: data.name || docSnap.id
+                        });
+                    }
+                });
+            } catch (fsErr) {
+                console.warn("Could not fetch photos from Firestore:", fsErr);
+            }
+
+            // 2. Fetch from Storage
             try {
                 const photosRef = ref(storage, `events/${eventId}/photos`);
                 const res = await listAll(photosRef);
@@ -48,20 +71,20 @@ export default function PhotoGallery({ eventId }: PhotoGalleryProps) {
                     };
                 });
 
-                const photoData = await Promise.all(photoPromises);
-                // Sort by date newest first
-                photoData.sort((a, b) => new Date(b.uploadedAt!).getTime() - new Date(a.uploadedAt!).getTime());
-                setPhotos(photoData);
+                const storagePhotos = await Promise.all(photoPromises);
+                storagePhotos.forEach((item) => {
+                    if (!allPhotosMap.has(item.url)) {
+                        allPhotosMap.set(item.url, item);
+                    }
+                });
             } catch (err: any) {
-                console.error("Error fetching photos:", err);
-                if (err.code === "storage/object-not-found") {
-                    setPhotos([]);
-                } else {
-                    setError("No se pudieron cargar las fotos. Verifica los permisos de Storage.");
-                }
-            } finally {
-                setLoading(false);
+                console.warn("Storage fetch err (could be quota 402):", err);
             }
+
+            const mergedPhotos = Array.from(allPhotosMap.values());
+            mergedPhotos.sort((a, b) => new Date(b.uploadedAt!).getTime() - new Date(a.uploadedAt!).getTime());
+            setPhotos(mergedPhotos);
+            setLoading(false);
         };
 
         fetchPhotos();

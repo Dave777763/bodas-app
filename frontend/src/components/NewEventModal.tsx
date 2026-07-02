@@ -5,6 +5,7 @@ import { X, Plus, Trash2, Upload, Music, MapPin, Calendar, Clock, Layout, Ticket
 import { db, storage } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { uploadEventImage } from "@/lib/storageHelper";
 import { VentoEventType, CountdownType, DressCode, ItineraryMoment, VentoEvent } from "@/lib/types";
 import InvitationPreview from "./InvitationPreview";
 
@@ -78,9 +79,7 @@ export default function NewEventModal({ isOpen, onClose, userId, ownerEmail }: N
     };
 
     const uploadImage = async (file: File, path: string) => {
-        const storageRef = ref(storage, path);
-        await uploadBytes(storageRef, file);
-        return await getDownloadURL(storageRef);
+        return await uploadEventImage(path, file);
     };
 
     const handleSubmit = async () => {
@@ -128,11 +127,7 @@ export default function NewEventModal({ isOpen, onClose, userId, ownerEmail }: N
         } catch (error: any) {
             console.error("Error creating event:", error);
             const msg = error?.message || error?.code || "";
-            if (msg.includes("402") || msg.includes("quota-exceeded") || error?.status === 402) {
-                alert("⚠️ Límite diario de Firebase Storage superado (Error 402).\n\nPara adjuntar imágenes ahora mismo, actualiza tu proyecto al Plan Blaze en la consola de Firebase, o crea la invitación sin imágenes por el momento.");
-            } else {
-                alert(`Error al crear el evento:\n${msg || "Revisa la consola para más detalles."}`);
-            }
+            alert(`Error al crear el evento:\n${msg || "Revisa tu conexión o intenta nuevamente."}`);
         } finally {
             setLoading(false);
         }

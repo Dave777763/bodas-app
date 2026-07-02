@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { storage, db } from "@/lib/firebase";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { doc, updateDoc } from "firebase/firestore";
+import { uploadEventImage } from "@/lib/storageHelper";
 import { Upload, X, Loader2, CheckCircle2, Image as ImageIcon } from "lucide-react";
 
 interface EventImageUploadProps {
@@ -40,36 +40,22 @@ export default function EventImageUpload({ eventId, field, label, currentImageUr
 
         try {
             const fileName = `${field}_${Date.now()}.jpg`;
-            const storageRef = ref(storage, `events/${eventId}/config/${fileName}`);
-            
-            const uploadTask = uploadBytesResumable(storageRef, file);
-
-            uploadTask.on(
-                "state_changed",
-                (snapshot) => {
-                    const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    setProgress(Math.round(p));
-                },
-                (err) => {
-                    console.error("Error upload:", err);
-                    setError("Error al subir la imagen.");
-                    setUploading(false);
-                },
-                async () => {
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    
-                    const eventRef = doc(db, "events", eventId);
-                    await updateDoc(eventRef, {
-                        [field]: downloadURL
-                    });
-
-                    setPreviewUrl(downloadURL);
-                    setUploading(false);
-                }
+            const downloadURL = await uploadEventImage(
+                `events/${eventId}/config/${fileName}`,
+                file,
+                (p) => setProgress(p)
             );
+            
+            const eventRef = doc(db, "events", eventId);
+            await updateDoc(eventRef, {
+                [field]: downloadURL
+            });
+
+            setPreviewUrl(downloadURL);
+            setUploading(false);
         } catch (err) {
             console.error("Error processing upload:", err);
-            setError("Error inesperado al procesar la imagen.");
+            setError("Error al subir la imagen. Por favor intenta de nuevo.");
             setUploading(false);
         }
     };
